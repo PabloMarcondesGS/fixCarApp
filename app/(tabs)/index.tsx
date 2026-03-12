@@ -1,98 +1,163 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// ... imports mantidos (apenas o que mudou abaixoo)
+import { StyleSheet, TouchableOpacity, Text, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+import { Ionicons } from '@expo/vector-icons';
+import { useState, useEffect } from 'react';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import Dashboard, { UserInfo } from '@/components/Dashboard';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: "203284143716-opfmi37sbfb76etc99afrli04l90u3vr.apps.googleusercontent.com",
+    scopes: ['profile', 'email'],
+    redirectUri: AuthSession.makeRedirectUri({
+      scheme: 'meuappexpo',
+    }),
+  });
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    if (response?.type === 'success' && response.authentication) {
+      setIsAuthenticated(true);
+      setAccessToken(response.authentication.accessToken);
+      fetchUserInfo(response.authentication.accessToken);
+    }
+  }, [response]);
+
+  const fetchUserInfo = async (token: string) => {
+    try {
+      const resp = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = await resp.json();
+      setUserInfo(user);
+    } catch (error) {
+      console.log('Erro ao buscar dados do usuário:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setAccessToken('');
+    setUserInfo(null);
+  };
+
+  if (isAuthenticated) {
+    return <Dashboard token={accessToken} userInfo={userInfo} onLogout={handleLogout} />;
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Ionicons name="planet" size={80} color="#4A90E2" style={styles.icon} />
+        <Text style={styles.title}>Bem-vindo</Text>
+        <Text style={styles.subtitle}>Faça login para continuar explorando o universo do seu novo app.</Text>
+      </View>
+
+      <View style={styles.formContainer}>
+        <TouchableOpacity 
+          style={[styles.button, !request && styles.buttonDisabled]} 
+          disabled={!request}
+          activeOpacity={0.8}
+          onPress={() => promptAsync()}
+        >
+          <Ionicons name="logo-google" size={24} color="#FFF" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Continuar com o Google</Text>
+        </TouchableOpacity>
+
+        {response?.type === 'error' && (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle" size={20} color="#F44336" />
+            <Text style={styles.errorText}>Erro ao fazer login.</Text>
+          </View>
+        )}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F7FA',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  headerContainer: {
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 60,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  icon: {
+    marginBottom: 20,
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 10,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  formContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  button: {
+    flexDirection: 'row',
+    backgroundColor: '#4A90E2',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: '#A0C4E8',
+    shadowOpacity: 0.1,
+  },
+  buttonIcon: {
+    marginRight: 12,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 12,
+    alignItems: 'center',
+    width: '100%',
+  },
+  errorText: {
+    marginLeft: 8,
+    color: '#C62828',
+    fontWeight: '500',
   },
 });

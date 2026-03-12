@@ -1,0 +1,113 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  dashboardContainer: {
+    flex: 1,
+    backgroundColor: '#F5F7FA',
+    paddingTop: 60,
+  },
+  dashboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 30,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#E1F0FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  welcomeText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  tokenText: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
+  },
+  logoutButton: {
+    padding: 10,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 12,
+  },
+  dashboardContent: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    elevation: 4,
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  cardDescription: {
+    fontSize: 15,
+    color: '#666',
+    lineHeight: 22,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#4A90E2',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#888',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  }
+});

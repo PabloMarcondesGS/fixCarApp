@@ -87,6 +87,12 @@ export const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#F5F7FA',
     borderRadius: 8,
+    marginRight: 8,
+  },
+  deleteButton: {
+    padding: 8,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
   },
   vehicleDetailsRow: {
     flexDirection: 'row',

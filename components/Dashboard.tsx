@@ -1,8 +1,10 @@
-import { TouchableOpacity, Text, View, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './Dashboard.styles';
-import { useState } from 'react';
-import VehicleRegistration, { Vehicle } from './VehicleRegistration';
+
+const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
 
 export interface UserInfo {
   name: string;
@@ -16,36 +18,39 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ token, userInfo, onLogout }: DashboardProps) {
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [vehicleCount, setVehicleCount] = useState(0);
 
-  const handleSaveVehicle = (savedVehicle: Vehicle) => {
-    setVehicle(savedVehicle);
-  };
+  useEffect(() => {
+    loadVehicleCount();
+  }, []);
 
-  const handleEditVehicle = () => {
-    // When editing, we set vehicle to null to show the form again,
-    // but the `VehicleRegistration` component handles maintaining its own internal state
-    // so the data isn't lost while typing. However, to pass the *current* data back down:
-    // It's already there in the form state of VehicleRegistration, but we can manage it better
-    // if we want to reset completely vs edit. For simple edit, we keep the data in VehicleRegistration and just flip a editing flag,
-    // OR just pass the current vehicle back.
+  const loadVehicleCount = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const vehicles = JSON.parse(stored);
+        setVehicleCount(vehicles.length);
+      }
+    } catch (e) {
+      console.error('Failed to load vehicle count', e);
+    }
   };
 
   return (
     <View style={styles.dashboardContainer}>
       <View style={styles.dashboardHeader}>
         <View style={styles.userInfo}>
-           {userInfo?.picture ? (
-             <Image source={{ uri: userInfo.picture }} style={styles.avatarImage} />
-           ) : (
-             <View style={styles.avatarPlaceholder}>
-               <Ionicons name="person" size={40} color="#4A90E2" />
-             </View>
-           )}
-           <View>
-             <Text style={styles.welcomeText}>Olá, {userInfo?.name || 'Explorador'}!</Text>
-             <Text style={styles.tokenText}>Token: {token.substring(0, 10)}...</Text>
-           </View>
+          {userInfo?.picture ? (
+            <Image source={{ uri: userInfo.picture }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={40} color="#4A90E2" />
+            </View>
+          )}
+          <View>
+            <Text style={styles.welcomeText}>Olá, {userInfo?.name || 'Explorador'}!</Text>
+            <Text style={styles.tokenText}>Explorando o universo automotivo</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Ionicons name="log-out-outline" size={24} color="#F44336" />
@@ -54,29 +59,28 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
 
       <ScrollView style={styles.dashboardContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
-           <Ionicons name="rocket" size={40} color="#FF9800" style={{marginBottom: 10}}/>
-           <Text style={styles.cardTitle}>Comece sua jornada</Text>
-           <Text style={styles.cardDescription}>Aqui será a área principal do seu aplicativo onde as mágicas acontecem.</Text>
+          <Ionicons name="car-sport" size={40} color="#4A90E2" style={{ marginBottom: 10 }} />
+          <Text style={styles.cardTitle}>Gerencie seus veículos</Text>
+          <Text style={styles.cardDescription}>Acompanhe o status dos seus veículos, registros de manutenção e histórico completo em um só lugar.</Text>
         </View>
-        
+
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Projetos</Text>
+            <Ionicons name="construct-outline" size={24} color="#4A90E2" style={{ marginBottom: 4 }} />
+            <Text style={styles.statNumber}>3</Text>
+            <Text style={styles.statLabel}>Revisões</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>4.8</Text>
-            <Text style={styles.statLabel}>Avaliação</Text>
+            <Ionicons name="car-outline" size={24} color="#4A90E2" style={{ marginBottom: 4 }} />
+            <Text style={styles.statNumber}>{vehicleCount}</Text>
+            <Text style={styles.statLabel}>Veículos</Text>
           </View>
         </View>
 
-        {/* COMPONENTE DE REGISTRO DE VEÍCULO */}
-        <View style={{ marginTop: 20, marginBottom: 40 }}>
-          <VehicleRegistration 
-            vehicle={vehicle} 
-            onSave={handleSaveVehicle} 
-            onEdit={() => setVehicle(null)} 
-           />
+        <View style={styles.infoCard}>
+          <Ionicons name="notifications-outline" size={24} color="#FF9800" style={{ marginBottom: 8 }} />
+          <Text style={styles.infoTitle}>Dica do dia</Text>
+          <Text style={styles.infoText}>Mantenha a calibragem dos pneus em dia para economizar combustível e aumentar a segurança.</Text>
         </View>
       </ScrollView>
     </View>

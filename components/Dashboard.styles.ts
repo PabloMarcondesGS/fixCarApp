@@ -109,5 +109,30 @@ export const styles = StyleSheet.create({
     color: '#888',
     fontWeight: '500',
     textTransform: 'uppercase',
+  },
+  infoCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 40,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   }
 });

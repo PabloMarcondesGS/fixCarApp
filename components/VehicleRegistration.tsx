@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './VehicleRegistration.styles';
 
@@ -14,9 +14,10 @@ interface VehicleRegistrationProps {
   vehicle: Vehicle | null;
   onSave: (vehicle: Vehicle) => void;
   onEdit: () => void;
+  onDelete: () => void;
 }
 
-export default function VehicleRegistration({ vehicle, onSave, onEdit }: VehicleRegistrationProps) {
+export default function VehicleRegistration({ vehicle, onSave, onEdit, onDelete }: VehicleRegistrationProps) {
   const [formData, setFormData] = useState<Vehicle>(
     vehicle || { name: '', brand: '', color: '', plate: '' }
   );
@@ -28,7 +29,25 @@ export default function VehicleRegistration({ vehicle, onSave, onEdit }: Vehicle
     if (formData.name.trim() && formData.plate.trim()) {
       onSave(formData);
     } else {
-      alert("Por favor, preencha pelo menos o Nome e a Placa do veículo.");
+      Alert.alert("Erro", "Por favor, preencha pelo menos o Nome e a Placa do veículo.");
+    }
+  };
+
+  const handleDelete = () => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Tem certeza que deseja remover este veículo?');
+      if (confirmed) {
+        onDelete();
+      }
+    } else {
+      Alert.alert(
+        "Excluir Veículo",
+        "Tem certeza que deseja remover este veículo?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Excluir", style: "destructive", onPress: onDelete }
+        ]
+      );
     }
   };
 
@@ -41,9 +60,14 @@ export default function VehicleRegistration({ vehicle, onSave, onEdit }: Vehicle
              <Text style={styles.vehicleName}>{vehicle.name}</Text>
              <Text style={styles.vehicleBrand}>{vehicle.brand}</Text>
           </View>
-          <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-            <Ionicons name="pencil" size={20} color="#4A90E2" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row' }}>
+            <TouchableOpacity style={styles.editButton} onPress={onEdit}>
+              <Ionicons name="pencil" size={20} color="#4A90E2" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.vehicleDetailsRow}>
@@ -74,7 +98,7 @@ export default function VehicleRegistration({ vehicle, onSave, onEdit }: Vehicle
           <Text style={styles.label}>Nome do Veículo</Text>
           <TextInput
             style={[styles.input, focusedInput === 'name' && styles.inputFocused]}
-            placeholder="Ex: Meu Carro de Viagem"
+            placeholder="Digite o nome"
             value={formData.name}
             onChangeText={(text) => setFormData({ ...formData, name: text })}
             onFocus={() => setFocusedInput('name')}
@@ -86,7 +110,7 @@ export default function VehicleRegistration({ vehicle, onSave, onEdit }: Vehicle
           <Text style={styles.label}>Marca / Modelo</Text>
           <TextInput
             style={[styles.input, focusedInput === 'brand' && styles.inputFocused]}
-            placeholder="Ex: Toyota Corolla"
+            placeholder="Digite o modelo"
             value={formData.brand}
             onChangeText={(text) => setFormData({ ...formData, brand: text })}
             onFocus={() => setFocusedInput('brand')}
@@ -98,7 +122,7 @@ export default function VehicleRegistration({ vehicle, onSave, onEdit }: Vehicle
           <Text style={styles.label}>Cor</Text>
           <TextInput
             style={[styles.input, focusedInput === 'color' && styles.inputFocused]}
-            placeholder="Ex: Prata"
+            placeholder="Digite a cor"
             value={formData.color}
             onChangeText={(text) => setFormData({ ...formData, color: text })}
             onFocus={() => setFocusedInput('color')}
@@ -110,7 +134,7 @@ export default function VehicleRegistration({ vehicle, onSave, onEdit }: Vehicle
           <Text style={styles.label}>Placa</Text>
           <TextInput
             style={[styles.input, focusedInput === 'plate' && styles.inputFocused]}
-            placeholder="Ex: ABC-1234"
+            placeholder="Digite a placa"
             autoCapitalize="characters"
             value={formData.plate}
             onChangeText={(text) => setFormData({ ...formData, plate: text })}

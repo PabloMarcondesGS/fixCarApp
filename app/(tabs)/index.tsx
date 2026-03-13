@@ -8,9 +8,13 @@ import { useState, useEffect } from 'react';
 
 import Dashboard, { UserInfo } from '@/components/Dashboard';
 
+import { useAuth } from '@/context/AuthContext';
+
 WebBrowser.maybeCompleteAuthSession();
 
 export default function HomeScreen() {
+  const { isAuthenticated, login, logout, accessToken, userInfo } = useAuth();
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: "203284143716-opfmi37sbfb76etc99afrli04l90u3vr.apps.googleusercontent.com",
     scopes: ['profile', 'email'],
@@ -19,14 +23,8 @@ export default function HomeScreen() {
     }),
   });
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [accessToken, setAccessToken] = useState('');
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-
   useEffect(() => {
     if (response?.type === 'success' && response.authentication) {
-      setIsAuthenticated(true);
-      setAccessToken(response.authentication.accessToken);
       fetchUserInfo(response.authentication.accessToken);
     }
   }, [response]);
@@ -37,20 +35,14 @@ export default function HomeScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = await resp.json();
-      setUserInfo(user);
+      login(token, user);
     } catch (error) {
       console.log('Erro ao buscar dados do usuário:', error);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setAccessToken('');
-    setUserInfo(null);
-  };
-
   if (isAuthenticated) {
-    return <Dashboard token={accessToken} userInfo={userInfo} onLogout={handleLogout} />;
+    return <Dashboard token={accessToken} userInfo={userInfo} onLogout={logout} />;
   }
 
   return (

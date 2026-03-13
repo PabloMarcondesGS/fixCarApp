@@ -50,6 +50,16 @@ function RootLayoutContent() {
           }}
         />
         <Drawer.Screen
+          name="oficinas"
+          options={{
+            drawerLabel: 'Oficinas',
+            title: 'Oficinas Parceiras',
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="construct-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
           name="detalhes-veiculo"
           options={{
             drawerLabel: 'Detalhes',

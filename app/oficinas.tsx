@@ -110,7 +110,8 @@ export default function OficinasScreen() {
       pathname: '/agendamento',
       params: { 
         workshopId: workshop.id, 
-        workshopName: workshop.name 
+        workshopName: workshop.name,
+        workshopAddress: workshop.address
       }
     });
   };

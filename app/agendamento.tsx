@@ -1,19 +1,64 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, FlatList, Image } from 'react-native';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
+const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
 
 const TIME_SLOTS = [
   '08:00', '09:00', '10:00', '11:00', 
   '13:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
+interface Appointment {
+  id: string;
+  workshopName: string;
+  workshopAddress?: string;
+  vehicleModel: string;
+  vehiclePlate: string;
+  date: string;
+  time: string;
+}
+
+interface Vehicle {
+  id: string;
+  plate: string;
+  model: string;
+  color: string;
+  type: 'Carro' | 'Moto';
+  imageUri?: string;
+}
+
 export default function AgendamentoScreen() {
   const params = useLocalSearchParams();
   const workshopName = params.workshopName as string || 'Oficina';
+  const workshopAddress = params.workshopAddress as string || '';
   
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<number>(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadVehicles();
+  }, []);
+
+  const loadVehicles = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setVehicles(parsed);
+        if (parsed.length > 0) {
+          setSelectedVehicle(parsed[0].id);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load vehicles', e);
+    }
+  };
 
   // Generate next 7 days
   const getDays = () => {
@@ -34,12 +79,38 @@ export default function AgendamentoScreen() {
   const days = getDays();
 
   const handleConfirm = () => {
+    if (!selectedVehicle) {
+      alert('Por favor, selecione um veículo.');
+      return;
+    }
     if (!selectedTime) {
       alert('Por favor, selecione um horário.');
       return;
     }
-    alert(`Agendamento confirmado para ${workshopName} em ${days[selectedDate].fullDate} às ${selectedTime}!`);
+    const vehicle = vehicles.find(v => v.id === selectedVehicle);
+    const newAppointment: Appointment = {
+      id: Date.now().toString(),
+      workshopName,
+      workshopAddress,
+      vehicleModel: vehicle?.model || '',
+      vehiclePlate: vehicle?.plate || '',
+      date: days[selectedDate].fullDate,
+      time: selectedTime,
+    };
+    saveAppointment(newAppointment);
+    alert(`Agendamento confirmado!\nOficina: ${workshopName}\nVeículo: ${vehicle?.model} (${vehicle?.plate})\nData: ${days[selectedDate].fullDate} às ${selectedTime}`);
     router.back();
+  };
+
+  const saveAppointment = async (appointment: any) => {
+    try {
+      const stored = await AsyncStorage.getItem(APPOINTMENTS_KEY);
+      const appointments = stored ? JSON.parse(stored) : [];
+      appointments.push(appointment);
+      await AsyncStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointments));
+    } catch (e) {
+      console.error('Failed to save appointment', e);
+    }
   };
 
   return (
@@ -49,7 +120,49 @@ export default function AgendamentoScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.workshopTitle}>{workshopName}</Text>
-          <Text style={styles.subtitle}>Escolha o melhor dia e horário para o seu serviço.</Text>
+          <Text style={styles.subtitle}>Escolha o veículo e o melhor horário para o serviço.</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Selecione seu Veículo</Text>
+          {vehicles.length > 0 ? (
+            <FlatList
+              horizontal
+              data={vehicles}
+              keyExtractor={(item) => item.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.vehicleList}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={[styles.vehicleCard, selectedVehicle === item.id && styles.vehicleCardSelected]}
+                  onPress={() => setSelectedVehicle(item.id)}
+                >
+                  <View style={styles.vehicleIconContainer}>
+                    {item.imageUri ? (
+                      <Image source={{ uri: item.imageUri }} style={styles.vehicleThumbnail} />
+                    ) : (
+                      <Ionicons 
+                        name={item.type === 'Carro' ? 'car' : 'bicycle'} 
+                        size={24} 
+                        color={selectedVehicle === item.id ? '#FFF' : '#4A90E2'} 
+                      />
+                    )}
+                  </View>
+                  <Text style={[styles.vehicleModel, selectedVehicle === item.id && styles.textSelected]} numberOfLines={1}>
+                    {item.model}
+                  </Text>
+                  <Text style={[styles.vehiclePlate, selectedVehicle === item.id && styles.textSelected]}>
+                    {item.plate}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          ) : (
+            <TouchableOpacity style={styles.addVehicleReminder} onPress={() => router.push('/veiculos')}>
+              <Ionicons name="add-circle-outline" size={32} color="#4A90E2" />
+              <Text style={styles.addVehicleReminderText}>Cadastre um veículo para agendar</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -133,6 +246,69 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1E293B',
     marginBottom: 16,
+  },
+  vehicleList: {
+    paddingRight: 24,
+  },
+  vehicleCard: {
+    width: 120,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 16,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  vehicleCardSelected: {
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+  },
+  vehicleIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  vehicleThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  vehicleModel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  vehiclePlate: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  addVehicleReminder: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+  },
+  addVehicleReminderText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#4A90E2',
+    fontWeight: '600',
   },
   dateList: {
     paddingRight: 24,

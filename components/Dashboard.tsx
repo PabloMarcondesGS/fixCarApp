@@ -1,10 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View, Linking } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState, useCallback } from 'react';
 import { styles } from './Dashboard.styles';
 
 const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
+const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
+
+interface Appointment {
+  id: string;
+  workshopName: string;
+  workshopAddress?: string;
+  vehicleModel: string;
+  vehiclePlate: string;
+  date: string;
+  time: string;
+}
 
 export interface UserInfo {
   name: string;
@@ -19,10 +31,19 @@ interface DashboardProps {
 
 export default function Dashboard({ token, userInfo, onLogout }: DashboardProps) {
   const [vehicleCount, setVehicleCount] = useState(0);
+  const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
+  const [appointmentCount, setAppointmentCount] = useState(0);
 
-  useEffect(() => {
-    loadVehicleCount();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const loadData = async () => {
+    await loadVehicleCount();
+    await loadAppointments();
+  };
 
   const loadVehicleCount = async () => {
     try {
@@ -34,6 +55,28 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
     } catch (e) {
       console.error('Failed to load vehicle count', e);
     }
+  };
+
+  const loadAppointments = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(APPOINTMENTS_KEY);
+      if (stored) {
+        const appointments: Appointment[] = JSON.parse(stored);
+        setAppointmentCount(appointments.length);
+        if (appointments.length > 0) {
+          // Simplificação: pega o último agendamento feito como "próximo"
+          // Em um app real, filtraríamos por data >= hoje e pegaríamos o mais próximo
+          setNextAppointment(appointments[appointments.length - 1]);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load appointments', e);
+    }
+  };
+
+  const handleOpenAddress = (address: string) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    Linking.openURL(url);
   };
 
   return (
@@ -58,6 +101,35 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
       </View>
 
       <ScrollView style={styles.dashboardContent} showsVerticalScrollIndicator={false}>
+        {nextAppointment && (
+          <View style={styles.nextAppointmentCard}>
+            <View style={styles.nextAppointmentBadge}>
+              <Text style={styles.nextAppointmentBadgeText}>Próxima Revisão</Text>
+            </View>
+            <View style={styles.nextAppointmentContent}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nextAppointmentWorkshop}>{nextAppointment.workshopName}</Text>
+                <Text style={styles.nextAppointmentDetail}>{nextAppointment.vehicleModel} • {nextAppointment.vehiclePlate}</Text>
+              </View>
+              <Ionicons name="calendar-outline" size={32} color="#4A90E2" />
+            </View>
+            <View style={styles.nextAppointmentDateContainer}>
+              <Ionicons name="time-outline" size={20} color="#4A90E2" />
+              <Text style={styles.nextAppointmentDate}>{nextAppointment.date} às {nextAppointment.time}</Text>
+            </View>
+
+            {nextAppointment.workshopAddress && (
+              <TouchableOpacity 
+                style={styles.addressButton} 
+                onPress={() => handleOpenAddress(nextAppointment.workshopAddress!)}
+              >
+                <Ionicons name="map-outline" size={20} color="#4A90E2" />
+                <Text style={styles.addressButtonText}>Ver Endereço</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         <View style={styles.card}>
           <Ionicons name="car-sport" size={40} color="#4A90E2" style={{ marginBottom: 10 }} />
           <Text style={styles.cardTitle}>Gerencie seus veículos</Text>
@@ -67,7 +139,7 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Ionicons name="construct-outline" size={24} color="#4A90E2" style={{ marginBottom: 4 }} />
-            <Text style={styles.statNumber}>3</Text>
+            <Text style={styles.statNumber}>{appointmentCount}</Text>
             <Text style={styles.statLabel}>Revisões</Text>
           </View>
           <View style={styles.statBox}>

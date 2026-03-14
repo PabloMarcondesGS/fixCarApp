@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, TextInput, Linking } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, TextInput, Linking, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
+
+interface Review {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
 interface Workshop {
   id: string;
@@ -12,6 +20,8 @@ interface Workshop {
   specialties: string[];
   phone: string;
   location: { lat: number; lng: number };
+  description: string;
+  reviews_list: Review[];
 }
 
 const MOCK_WORKSHOPS: Workshop[] = [
@@ -23,7 +33,12 @@ const MOCK_WORKSHOPS: Workshop[] = [
     address: 'Av. Paulista, 1000 - São Paulo, SP',
     specialties: ['Motor', 'Suspensão', 'Freios'],
     phone: '11999999999',
-    location: { lat: -23.561, lng: -46.655 }
+    location: { lat: -23.561, lng: -46.655 },
+    description: 'Especializada em mecânica pesada e diagnósticos complexos. Mais de 20 anos de experiência no mercado.',
+    reviews_list: [
+      { id: 'r1', userName: 'Carlos Silva', rating: 5, comment: 'Ótimo atendimento e preço justo.', date: '10/03/2026' },
+      { id: 'r2', userName: 'Ana Oliveira', rating: 4, comment: 'Serviço de qualidade, mas demorou um pouco.', date: '05/03/2026' }
+    ]
   },
   {
     id: '2',
@@ -33,7 +48,11 @@ const MOCK_WORKSHOPS: Workshop[] = [
     address: 'Rua das Flores, 450 - São Paulo, SP',
     specialties: ['Pneus', 'Alinhamento', 'Balanceamento'],
     phone: '11888888888',
-    location: { lat: -23.570, lng: -46.640 }
+    location: { lat: -23.570, lng: -46.640 },
+    description: 'Foco total em pneus e geometria veicular. Equipamentos de última geração para alinhamento 3D.',
+    reviews_list: [
+      { id: 'r3', userName: 'Pedro Santos', rating: 5, comment: 'Rápido e eficiente.', date: '12/03/2026' }
+    ]
   },
   {
     id: '3',
@@ -43,7 +62,11 @@ const MOCK_WORKSHOPS: Workshop[] = [
     address: 'Av. Brasil, 2500 - São Paulo, SP',
     specialties: ['Elétrica', 'Baterias', 'Injeção'],
     phone: '11777777777',
-    location: { lat: -23.550, lng: -46.670 }
+    location: { lat: -23.550, lng: -46.670 },
+    description: 'Especialistas em sistemas elétricos modernos e injeção eletrônica. Diagnóstico por scanner.',
+    reviews_list: [
+      { id: 'r4', userName: 'Marcos Souza', rating: 5, comment: 'Resolveram o problema que ninguém achava.', date: '01/03/2026' }
+    ]
   },
   {
     id: '4',
@@ -53,13 +76,19 @@ const MOCK_WORKSHOPS: Workshop[] = [
     address: 'Al. Santos, 120 - São Paulo, SP',
     specialties: ['Revisão Geral', 'Troca de Óleo', 'Ar Condicionado'],
     phone: '11666666666',
-    location: { lat: -23.565, lng: -46.650 }
+    location: { lat: -23.565, lng: -46.650 },
+    description: 'Centro completo para revisão preventiva e corretiva. Higienização de ar condicionado certificada.',
+    reviews_list: [
+      { id: 'r5', userName: 'Julia Lima', rating: 4, comment: 'Muito atenciosos.', date: '15/02/2026' }
+    ]
   }
 ];
 
 export default function OficinasScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [workshops, setWorkshops] = useState(MOCK_WORKSHOPS);
+  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
@@ -70,22 +99,31 @@ export default function OficinasScreen() {
     setWorkshops(filtered);
   };
 
-  const renderStars = (rating: number) => {
+  const openDetails = (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setModalVisible(true);
+  };
+
+  const renderStars = (rating: number, reviewCount: number) => {
     return (
       <View style={styles.ratingContainer}>
         <Ionicons name="star" size={16} color="#FFB000" />
         <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-        <Text style={styles.reviewsText}>({workshops[0].reviews})</Text>
+        <Text style={styles.reviewsText}>({reviewCount})</Text>
       </View>
     );
   };
 
   const renderItem = ({ item }: { item: Workshop }) => (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={() => openDetails(item)}
+      activeOpacity={0.7}
+    >
       <View style={styles.cardHeader}>
         <View style={styles.titleGroup}>
           <Text style={styles.workshopName}>{item.name}</Text>
-          {renderStars(item.rating)}
+          {renderStars(item.rating, item.reviews)}
         </View>
         <TouchableOpacity style={styles.favButton}>
           <Ionicons name="heart-outline" size={24} color="#64748B" />
@@ -118,7 +156,7 @@ export default function OficinasScreen() {
           <Text style={styles.mapButtonText}>Ver no Mapa</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -150,6 +188,77 @@ export default function OficinasScreen() {
           </View>
         }
       />
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Detalhes da Oficina</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#1E293B" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedWorkshop && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.detailName}>{selectedWorkshop.name}</Text>
+                {renderStars(selectedWorkshop.rating, selectedWorkshop.reviews)}
+                
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Sobre</Text>
+                  <Text style={styles.descriptionText}>{selectedWorkshop.description}</Text>
+                </View>
+
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Especialidades</Text>
+                  <View style={styles.specialtiesContainer}>
+                    {selectedWorkshop.specialties.map((s, index) => (
+                      <View key={index} style={styles.specialtyBadge}>
+                        <Text style={styles.specialtyText}>{s}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Avaliações</Text>
+                  {selectedWorkshop.reviews_list.map((review) => (
+                    <View key={review.id} style={styles.reviewCard}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={styles.reviewUser}>{review.userName}</Text>
+                        <Text style={styles.reviewDate}>{review.date}</Text>
+                      </View>
+                      <View style={styles.reviewStars}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Ionicons 
+                            key={star} 
+                            name={star <= review.rating ? "star" : "star-outline"} 
+                            size={14} 
+                            color="#FFB000" 
+                          />
+                        ))}
+                      </View>
+                      <Text style={styles.reviewComment}>{review.comment}</Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+
+            <TouchableOpacity 
+              style={styles.mainActionButton}
+              onPress={() => alert('Agendamento em breve!')}
+            >
+              <Text style={styles.mainActionButtonText}>Confirmar Agendamento</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -303,5 +412,93 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#94A3B8',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  detailName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 8,
+  },
+  section: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 12,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#64748B',
+    lineHeight: 22,
+  },
+  reviewCard: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  reviewUser: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    gap: 2,
+    marginBottom: 8,
+  },
+  reviewComment: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 18,
+  },
+  mainActionButton: {
+    backgroundColor: '#4A90E2',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  mainActionButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

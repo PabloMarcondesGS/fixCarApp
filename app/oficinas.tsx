@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, TextInput, Linking, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 
 interface Review {
   id: string;
@@ -104,6 +104,17 @@ export default function OficinasScreen() {
     setModalVisible(true);
   };
 
+  const handleSchedule = (workshop: Workshop) => {
+    setModalVisible(false);
+    router.push({
+      pathname: '/agendamento',
+      params: { 
+        workshopId: workshop.id, 
+        workshopName: workshop.name 
+      }
+    });
+  };
+
   const renderStars = (rating: number, reviewCount: number) => {
     return (
       <View style={styles.ratingContainer}>
@@ -146,7 +157,7 @@ export default function OficinasScreen() {
       <View style={styles.actionRow}>
         <TouchableOpacity 
           style={styles.callButton}
-          onPress={() => alert('Sistema de agendamento em breve!')}
+          onPress={() => handleSchedule(item)}
         >
           <Ionicons name="calendar-outline" size={18} color="#FFF" />
           <Text style={styles.callButtonText}>Agendar</Text>
@@ -252,9 +263,9 @@ export default function OficinasScreen() {
 
             <TouchableOpacity 
               style={styles.mainActionButton}
-              onPress={() => alert('Agendamento em breve!')}
+              onPress={() => selectedWorkshop && handleSchedule(selectedWorkshop)}
             >
-              <Text style={styles.mainActionButtonText}>Confirmar Agendamento</Text>
+              <Text style={styles.mainActionButtonText}>Agendar Agora</Text>
             </TouchableOpacity>
           </View>
         </View>

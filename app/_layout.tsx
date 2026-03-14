@@ -67,6 +67,14 @@ function RootLayoutContent() {
             drawerItemStyle: { display: 'none' },
           }}
         />
+        <Drawer.Screen
+          name="agendamento"
+          options={{
+            drawerLabel: 'Agendamento',
+            title: 'Agendar Horário',
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
     </Drawer>
   );
 }

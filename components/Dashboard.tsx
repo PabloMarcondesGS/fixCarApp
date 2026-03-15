@@ -4,6 +4,7 @@ import { Image, ScrollView, Text, TouchableOpacity, View, Linking } from 'react-
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { styles } from './Dashboard.styles';
+import { API_ENDPOINTS } from '@/constants/Api';
 
 const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
 const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
@@ -47,30 +48,27 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
 
   const loadVehicleCount = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const vehicles = JSON.parse(stored);
-        setVehicleCount(vehicles.length);
-      }
+      const response = await fetch(API_ENDPOINTS.VEHICLES);
+      const data = await response.json();
+      setVehicleCount(data.length);
     } catch (e) {
-      console.error('Failed to load vehicle count', e);
+      console.error('Failed to load vehicle count from API', e);
     }
   };
 
   const loadAppointments = async () => {
     try {
-      const stored = await AsyncStorage.getItem(APPOINTMENTS_KEY);
-      if (stored) {
-        const appointments: Appointment[] = JSON.parse(stored);
-        setAppointmentCount(appointments.length);
-        if (appointments.length > 0) {
-          // Simplificação: pega o último agendamento feito como "próximo"
-          // Em um app real, filtraríamos por data >= hoje e pegaríamos o mais próximo
-          setNextAppointment(appointments[appointments.length - 1]);
-        }
+      const response = await fetch(API_ENDPOINTS.APPOINTMENTS);
+      const data: Appointment[] = await response.json();
+      setAppointmentCount(data.length);
+      if (data.length > 0) {
+        // Simplificação: pega o último agendamento feito como "próximo"
+        setNextAppointment(data[data.length - 1]);
+      } else {
+        setNextAppointment(null);
       }
     } catch (e) {
-      console.error('Failed to load appointments', e);
+      console.error('Failed to load appointments from API', e);
     }
   };
 

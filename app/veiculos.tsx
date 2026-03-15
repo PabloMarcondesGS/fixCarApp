@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'react-native';
+import { Image, ActivityIndicator } from 'react-native';
+import { API_ENDPOINTS } from '@/constants/Api';
 
 // Storage Key
 const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
@@ -20,6 +21,7 @@ interface Vehicle {
 
 export default function VeiculosScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const router = useRouter();
   
@@ -36,24 +38,18 @@ export default function VeiculosScreen() {
 
   const loadVehicles = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setVehicles(JSON.parse(stored));
-      } else {
-        setVehicles([]);
-      }
+      setLoading(true);
+      const response = await fetch(API_ENDPOINTS.VEHICLES);
+      const data = await response.json();
+      setVehicles(data);
     } catch (e) {
-      console.error('Failed to load vehicles', e);
+      console.error('Failed to load vehicles from API', e);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveVehicles = async (newVehicles: Vehicle[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newVehicles));
-    } catch (e) {
-      console.error('Failed to save vehicles', e);
-    }
-  };
+  // saveVehicles locally is no longer needed as we use the API
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -68,14 +64,13 @@ export default function VeiculosScreen() {
     }
   };
 
-  const handleAddVehicle = () => {
+  const handleAddVehicle = async () => {
     if (!model || !plate || !color) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
 
-    const newVehicle: Vehicle = {
-      id: Date.now().toString(),
+    const vehicleData = {
       model,
       plate,
       color,
@@ -83,26 +78,53 @@ export default function VeiculosScreen() {
       imageUri: imageUri || undefined,
     };
 
-    const updatedList = [...vehicles, newVehicle];
-    setVehicles(updatedList);
-    saveVehicles(updatedList);
-    
-    // reset form
-    setModel('');
-    setPlate('');
-    setColor('');
-    setType('Carro');
-    setImageUri(null);
-    setIsModalVisible(false);
+    try {
+      const response = await fetch(API_ENDPOINTS.VEHICLES, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicleData),
+      });
+
+      if (response.ok) {
+        const newVehicle = await response.json();
+        setVehicles([...vehicles, newVehicle]);
+        
+        // reset form
+        setModel('');
+        setPlate('');
+        setColor('');
+        setType('Carro');
+        setImageUri(null);
+        setIsModalVisible(false);
+      } else {
+        Alert.alert('Erro', 'Não foi possível cadastrar o veículo no servidor.');
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar veículo:', error);
+      Alert.alert('Erro', 'Falha na conexão com o servidor.');
+    }
   };
 
   const handleDelete = (item: Vehicle) => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm('Tem certeza que deseja excluir este veículo?');
       if (confirmed) {
-        const updated = vehicles.filter(v => v.id !== item.id);
-        setVehicles(updated);
-        saveVehicles(updated);
+        const performDelete = async () => {
+          try {
+            const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${item.id}`, {
+              method: 'DELETE',
+            });
+            if (response.ok) {
+              setVehicles(vehicles.filter(v => v.id !== item.id));
+            } else {
+              alert('Erro ao excluir veículo no servidor.');
+            }
+          } catch (error) {
+            console.error('Erro ao excluir veículo:', error);
+            alert('Falha na conexão com o servidor.');
+          }
+        };
+        performDelete();
       }
     } else {
       Alert.alert(
@@ -110,10 +132,20 @@ export default function VeiculosScreen() {
         'Tem certeza que deseja excluir este veículo?',
         [
           { text: 'Cancelar', style: 'cancel' },
-          { text: 'Excluir', style: 'destructive', onPress: () => {
-            const updated = vehicles.filter(v => v.id !== item.id);
-            setVehicles(updated);
-            saveVehicles(updated);
+          { text: 'Excluir', style: 'destructive', onPress: async () => {
+            try {
+              const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${item.id}`, {
+                method: 'DELETE',
+              });
+              if (response.ok) {
+                setVehicles(vehicles.filter(v => v.id !== item.id));
+              } else {
+                Alert.alert('Erro', 'Não foi possível excluir o veículo no servidor.');
+              }
+            } catch (error) {
+              console.error('Erro ao excluir veículo:', error);
+              Alert.alert('Erro', 'Falha na conexão com o servidor.');
+            }
           }},
         ]
       );
@@ -160,20 +192,27 @@ export default function VeiculosScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Meus Veículos' }} />
       
-      <FlatList
-        data={vehicles}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <Text style={styles.headerTitle}>Veículos Cadastrados</Text>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhum veículo cadastrado.</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text style={styles.emptyText}>Carregando veículos...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={vehicles}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <Text style={styles.headerTitle}>Veículos Cadastrados</Text>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Nenhum veículo cadastrado.</Text>
+            </View>
+          }
+        />
+      )}
 
       {/* Floating Action Button */}
       <TouchableOpacity 

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, FlatList, Image }
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_ENDPOINTS } from '@/constants/Api';
 
 const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
 const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
@@ -47,16 +48,14 @@ export default function AgendamentoScreen() {
 
   const loadVehicles = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setVehicles(parsed);
-        if (parsed.length > 0) {
-          setSelectedVehicle(parsed[0].id);
-        }
+      const response = await fetch(API_ENDPOINTS.VEHICLES);
+      const data = await response.json();
+      setVehicles(data);
+      if (data.length > 0) {
+        setSelectedVehicle(data[0].id);
       }
     } catch (e) {
-      console.error('Failed to load vehicles', e);
+      console.error('Failed to load vehicles from API', e);
     }
   };
 
@@ -97,9 +96,34 @@ export default function AgendamentoScreen() {
       date: days[selectedDate].fullDate,
       time: selectedTime,
     };
-    saveAppointment(newAppointment);
-    alert(`Agendamento confirmado!\nOficina: ${workshopName}\nVeículo: ${vehicle?.model} (${vehicle?.plate})\nData: ${days[selectedDate].fullDate} às ${selectedTime}`);
-    router.back();
+    
+    sendAppointmentToBackend(newAppointment);
+    saveAppointment(newAppointment); // Mantém local também
+  };
+
+  const sendAppointmentToBackend = async (appointment: Appointment) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.APPOINTMENTS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointment),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert(`${result.message}\nOficina: ${appointment.workshopName}\nData: ${appointment.date} às ${appointment.time}`);
+        router.back();
+      } else {
+        alert('Erro ao realizar agendamento no servidor.');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar agendamento:', error);
+      alert('Agendamento salvo apenas localmente (erro de conexão com o servidor).');
+      router.back();
+    }
   };
 
   const saveAppointment = async (appointment: any) => {

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, TextInput, Linking, Modal, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, TextInput, Linking, Modal, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
+import { API_ENDPOINTS } from '@/constants/Api';
 
 interface Review {
   id: string;
@@ -24,75 +25,36 @@ interface Workshop {
   reviews_list: Review[];
 }
 
-const MOCK_WORKSHOPS: Workshop[] = [
-  {
-    id: '1',
-    name: 'Oficina do Jão',
-    rating: 4.8,
-    reviews: 124,
-    address: 'Av. Paulista, 1000 - São Paulo, SP',
-    specialties: ['Motor', 'Suspensão', 'Freios'],
-    phone: '11999999999',
-    location: { lat: -23.561, lng: -46.655 },
-    description: 'Especializada em mecânica pesada e diagnósticos complexos. Mais de 20 anos de experiência no mercado.',
-    reviews_list: [
-      { id: 'r1', userName: 'Carlos Silva', rating: 5, comment: 'Ótimo atendimento e preço justo.', date: '10/03/2026' },
-      { id: 'r2', userName: 'Ana Oliveira', rating: 4, comment: 'Serviço de qualidade, mas demorou um pouco.', date: '05/03/2026' }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Pneus Express',
-    rating: 4.5,
-    reviews: 89,
-    address: 'Rua das Flores, 450 - São Paulo, SP',
-    specialties: ['Pneus', 'Alinhamento', 'Balanceamento'],
-    phone: '11888888888',
-    location: { lat: -23.570, lng: -46.640 },
-    description: 'Foco total em pneus e geometria veicular. Equipamentos de última geração para alinhamento 3D.',
-    reviews_list: [
-      { id: 'r3', userName: 'Pedro Santos', rating: 5, comment: 'Rápido e eficiente.', date: '12/03/2026' }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Elétrica Voltagem',
-    rating: 4.9,
-    reviews: 56,
-    address: 'Av. Brasil, 2500 - São Paulo, SP',
-    specialties: ['Elétrica', 'Baterias', 'Injeção'],
-    phone: '11777777777',
-    location: { lat: -23.550, lng: -46.670 },
-    description: 'Especialistas em sistemas elétricos modernos e injeção eletrônica. Diagnóstico por scanner.',
-    reviews_list: [
-      { id: 'r4', userName: 'Marcos Souza', rating: 5, comment: 'Resolveram o problema que ninguém achava.', date: '01/03/2026' }
-    ]
-  },
-  {
-    id: '4',
-    name: 'Centro Automotivo Estrela',
-    rating: 4.7,
-    reviews: 210,
-    address: 'Al. Santos, 120 - São Paulo, SP',
-    specialties: ['Revisão Geral', 'Troca de Óleo', 'Ar Condicionado'],
-    phone: '11666666666',
-    location: { lat: -23.565, lng: -46.650 },
-    description: 'Centro completo para revisão preventiva e corretiva. Higienização de ar condicionado certificada.',
-    reviews_list: [
-      { id: 'r5', userName: 'Julia Lima', rating: 4, comment: 'Muito atenciosos.', date: '15/02/2026' }
-    ]
-  }
-];
+// O MOCK_WORKSHOPS foi movido para o backend
 
 export default function OficinasScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [workshops, setWorkshops] = useState(MOCK_WORKSHOPS);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [fullWorkshops, setFullWorkshops] = useState<Workshop[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+  useEffect(() => {
+    fetchWorkshops();
+  }, []);
+
+  const fetchWorkshops = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.WORKSHOPS);
+      const data = await response.json();
+      setWorkshops(data);
+      setFullWorkshops(data);
+    } catch (error) {
+      console.error('Erro ao buscar oficinas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearch = (text: string) => {
     setSearchQuery(text);
-    const filtered = MOCK_WORKSHOPS.filter(w => 
+    const filtered = fullWorkshops.filter(w => 
       w.name.toLowerCase().includes(text.toLowerCase()) || 
       w.specialties.some(s => s.toLowerCase().includes(text.toLowerCase()))
     );
@@ -114,6 +76,11 @@ export default function OficinasScreen() {
         workshopAddress: workshop.address
       }
     });
+  };
+
+  const handleOpenMap = (address: string) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    Linking.openURL(url);
   };
 
   const renderStars = (rating: number, reviewCount: number) => {
@@ -163,7 +130,10 @@ export default function OficinasScreen() {
           <Ionicons name="calendar-outline" size={18} color="#FFF" />
           <Text style={styles.callButtonText}>Agendar</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.mapButton}>
+        <TouchableOpacity 
+          style={styles.mapButton}
+          onPress={() => handleOpenMap(item.address)}
+        >
           <Ionicons name="map-outline" size={18} color="#4A90E2" />
           <Text style={styles.mapButtonText}>Ver no Mapa</Text>
         </TouchableOpacity>
@@ -187,19 +157,26 @@ export default function OficinasScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={workshops}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="search-outline" size={64} color="#CBD5E1" />
-            <Text style={styles.emptyText}>Nenhuma oficina encontrada.</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text style={styles.emptyText}>Carregando oficinas...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={workshops}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={64} color="#CBD5E1" />
+              <Text style={styles.emptyText}>Nenhuma oficina encontrada.</Text>
+            </View>
+          }
+        />
+      )}
 
       <Modal
         animationType="slide"

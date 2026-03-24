@@ -11,6 +11,13 @@ import { API_ENDPOINTS } from '@/constants/Api';
 // Storage Key
 const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
 
+interface Plan {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+}
+
 interface Vehicle {
   id: string;
   plate: string;
@@ -18,10 +25,13 @@ interface Vehicle {
   color: string;
   type: 'Carro' | 'Moto';
   imageUri?: string;
+  plan?: string;
+  subscription_status?: string;
 }
 
 export default function VeiculosScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const router = useRouter();
@@ -32,10 +42,22 @@ export default function VeiculosScreen() {
   const [color, setColor] = useState('');
   const [type, setType] = useState<'Carro' | 'Moto'>('Carro');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [plan, setPlan] = useState<'Free' | 'Basic' | 'Premium'>('Free');
 
   useEffect(() => {
     loadVehicles();
+    loadPlans();
   }, []);
+
+  const loadPlans = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.PLANS);
+      const data = await response.json();
+      setPlans(data);
+    } catch (error) {
+      console.error('Erro ao buscar planos:', error);
+    }
+  };
 
   const loadVehicles = async () => {
     try {
@@ -83,6 +105,7 @@ export default function VeiculosScreen() {
       color,
       type,
       imageUri: imageUri || undefined,
+      plan,
     };
 
     try {
@@ -102,6 +125,7 @@ export default function VeiculosScreen() {
         setColor('');
         setType('Carro');
         setImageUri(null);
+        setPlan('Free');
         setIsModalVisible(false);
       } else {
         Alert.alert('Erro', 'Não foi possível cadastrar o veículo no servidor.');
@@ -180,7 +204,14 @@ export default function VeiculosScreen() {
           )}
         </View>
         <View style={styles.infoContainer}>
-          <Text style={styles.model}>{item.model}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.model}>{item.model}</Text>
+            {item.plan && (
+              <View style={[styles.planBadge, item.plan === 'Premium' ? styles.premiumBadge : styles.freeBadge]}>
+                <Text style={styles.planBadgeText}>{item.plan}</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.plate}>Placa: {item.plate}</Text>
           <Text style={styles.color}>Cor: {item.color}</Text>
         </View>
@@ -299,22 +330,32 @@ export default function VeiculosScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Tipo</Text>
-                <View style={styles.typeContainer}>
-                  <TouchableOpacity 
-                    style={[styles.typeButton, type === 'Carro' && styles.typeButtonActive]}
-                    onPress={() => setType('Carro')}
-                  >
-                    <Ionicons name="car" size={20} color={type === 'Carro' ? '#FFF' : '#64748B'} />
-                    <Text style={[styles.typeButtonText, type === 'Carro' && styles.typeButtonTextActive]}>Carro</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.typeButton, type === 'Moto' && styles.typeButtonActive]}
-                    onPress={() => setType('Moto')}
-                  >
-                    <Ionicons name="bicycle" size={20} color={type === 'Moto' ? '#FFF' : '#64748B'} />
-                    <Text style={[styles.typeButtonText, type === 'Moto' && styles.typeButtonTextActive]}>Moto</Text>
-                  </TouchableOpacity>
+                <Text style={styles.label}>Plano</Text>
+                <View style={[styles.planContainer, { flexDirection: 'column' }]}>
+                  {plans.map((p) => (
+                    <TouchableOpacity 
+                      key={p.id}
+                      style={[styles.planOption, plan === p.id && styles.planOptionActive, { marginBottom: 8 }]}
+                      onPress={() => setPlan(p.id as any)}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <Ionicons 
+                          name={p.id === 'Free' ? 'leaf-outline' : p.id === 'Basic' ? 'shield-outline' : 'ribbon-outline'} 
+                          size={20} 
+                          color={plan === p.id ? '#FFF' : '#4A90E2'} 
+                        />
+                        <View style={{ marginLeft: 12 }}>
+                          <Text style={[styles.planOptionText, plan === p.id && styles.planOptionTextActive, { fontSize: 16 }]}>
+                            {p.name}
+                          </Text>
+                          <Text style={[styles.planPriceText, plan === p.id && styles.planPriceTextActive]}>
+                            {p.price === 0 ? 'Grátis' : `R$ ${p.price.toFixed(2)}/mês`}
+                          </Text>
+                        </View>
+                      </View>
+                      {plan === p.id && <Ionicons name="checkmark-circle" size={24} color="#FFF" />}
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
 

@@ -212,6 +212,60 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 16,
   },
+  planBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  freeBadge: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#CBD5E1',
+  },
+  premiumBadge: {
+    backgroundColor: '#FFF8E1',
+    borderColor: '#FFB74D',
+  },
+  planBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+  },
+  planContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  planOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 6,
+  },
+  planOptionActive: {
+    backgroundColor: '#FFB74D',
+    borderColor: '#FFB74D',
+  },
+  planOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  planOptionTextActive: {
+    color: '#FFF',
+  },
+  planPriceText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  planPriceTextActive: {
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
 });
 
 export default styles;

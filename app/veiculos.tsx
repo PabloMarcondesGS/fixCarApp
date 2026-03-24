@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, FlatList, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import styles from './veiculos.styles';
+import styles from '@/styles/veiculos.styles';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -57,11 +57,17 @@ export default function VeiculosScreen() {
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.8,
+      quality: 0.5, // Reduzindo um pouco para economizar espaço no DB
+      base64: true,
     });
 
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      if (asset.base64) {
+        setImageUri(`data:image/jpeg;base64,${asset.base64}`);
+      } else {
+        setImageUri(asset.uri);
+      }
     }
   };
 
@@ -175,8 +181,8 @@ export default function VeiculosScreen() {
         </View>
         <View style={styles.infoContainer}>
           <Text style={styles.model}>{item.model}</Text>
-          <Text style={styles.plate}>{item.plate}</Text>
-          <Text style={styles.color}>{item.color}</Text>
+          <Text style={styles.plate}>Placa: {item.plate}</Text>
+          <Text style={styles.color}>Cor: {item.color}</Text>
         </View>
       </TouchableOpacity>
       

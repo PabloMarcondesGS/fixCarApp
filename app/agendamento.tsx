@@ -15,8 +15,10 @@ const TIME_SLOTS = [
 
 interface Appointment {
   id: string;
+  workshopId: string;
   workshopName: string;
   workshopAddress?: string;
+  vehicleId: string;
   vehicleModel: string;
   vehiclePlate: string;
   date: string;
@@ -34,6 +36,7 @@ interface Vehicle {
 
 export default function AgendamentoScreen() {
   const params = useLocalSearchParams();
+  const workshopId = params.workshopId as string;
   const workshopName = params.workshopName as string || 'Oficina';
   const workshopAddress = params.workshopAddress as string || '';
   
@@ -89,8 +92,10 @@ export default function AgendamentoScreen() {
     const vehicle = vehicles.find(v => v.id === selectedVehicle);
     const newAppointment: Appointment = {
       id: Date.now().toString(),
+      workshopId,
       workshopName,
       workshopAddress,
+      vehicleId: selectedVehicle || '',
       vehicleModel: vehicle?.model || '',
       vehiclePlate: vehicle?.plate || '',
       date: days[selectedDate].fullDate,

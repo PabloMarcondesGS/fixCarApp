@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, FlatList, TouchableOpacity, TextInput, Linking, Modal, ScrollView, ActivityIndicator } from 'react-native';
-import styles from './oficinas.styles';
+import styles from '@/styles/oficinas.styles';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { API_ENDPOINTS } from '@/constants/Api';

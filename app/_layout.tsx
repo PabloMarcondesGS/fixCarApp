@@ -27,13 +27,36 @@ function RootLayoutContent() {
   return (
     <Drawer screenOptions={{ 
       headerShown: true,
-      drawerStyle: { width: 250 },
+      headerStyle: {
+        backgroundColor: '#FFC680',
+        elevation: 0, // Remove sombra no Android
+        shadowOpacity: 0, // Remove sombra no iOS
+        borderBottomWidth: 1,
+        borderBottomColor: '#FFC680',
+      },
+      headerTintColor: '#1E293B',
+      headerTitleStyle: {
+        fontWeight: '800',
+      },
+      drawerStyle: { 
+        width: 250,
+        backgroundColor: 'rgba(255, 255, 255, 0.94)',
+      },
+      drawerActiveTintColor: '#FF8F00', // Um laranja mais forte para o menu
+      drawerInactiveTintColor: '#64748B',
+      drawerActiveBackgroundColor: '#FFF8E1',
+      drawerLabelStyle: {
+        fontSize: 16,
+        fontWeight: '600',
+      },
+      drawerType: 'front',
+      overlayColor: 'rgba(0, 0, 0, 0.5)',
     }}>
       <Drawer.Screen
         name="(tabs)"
         options={{
           drawerLabel: 'Home',
-          title: 'Meu App',
+          title: 'My Car',
           drawerIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),

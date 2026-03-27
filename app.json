@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "meu-app-expo",
+    "name": "FixCar",
     "slug": "meu-app-expo",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,12 +12,19 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pablomarcondes.fixcar",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

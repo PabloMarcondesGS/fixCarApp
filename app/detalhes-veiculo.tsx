@@ -1,55 +1,59 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import styles from '@/styles/detalhes-veiculo.styles';
+import { API_ENDPOINTS } from '@/constants/Api';
 
 interface Maintenance {
   id: string;
   date: string;
-  description: string;
-  value: string;
-  icon: keyof typeof Ionicons.prototype.props.name;
-  provider?: string;
-  notes?: string;
+  service: string;
+  status: string;
+  cost?: number;
+  details?: string;
+  workshop_name?: string;
+  parts_images?: string; // JSON string
 }
-
-const MOCK_MAINTENANCES: Maintenance[] = [
-  { 
-    id: '1', 
-    date: '12 Mar 2026', 
-    description: 'Troca de Óleo e Filtro', 
-    value: 'R$ 250,00', 
-    icon: 'water-outline',
-    provider: 'Posto Estrela',
-    notes: 'Utilizado óleo sintético 5W30 e filtro original.'
-  },
-  { 
-    id: '2', 
-    date: '05 Jan 2026', 
-    description: 'Revisão dos Freios', 
-    value: 'R$ 480,00', 
-    icon: 'construct-outline',
-    provider: 'Oficina do Jão',
-    notes: 'Troca das pastilhas dianteiras e retífica dos discos.'
-  },
-  { 
-    id: '3', 
-    date: '15 Nov 2025', 
-    description: 'Alinhamento e Balanceamento', 
-    value: 'R$ 180,00', 
-    icon: 'git-commit-outline',
-    provider: 'Pneus Express',
-    notes: 'Balanceamento realizado nas 4 rodas.'
-  },
-];
 
 export default function DetalhesVeiculoScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
+  const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Parse params
   const { id, model, plate, color, type, imageUri } = params;
+
+  useEffect(() => {
+    fetchMaintenanceHistory();
+  }, [id]);
+
+  const fetchMaintenanceHistory = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_ENDPOINTS.APPOINTMENTS}?vehicleId=${id}`);
+      const data = await response.json();
+      
+      // Filtras apenas as concluídas (ou todas, se preferir histórico completo)
+      // O usuário pediu: "quando a oficina concluir a revisao ela deve aparecer na listagem"
+      const completed = data.filter((item: Maintenance) => item.status === 'Concluído');
+      setMaintenances(completed);
+    } catch (error) {
+      console.error('Erro ao buscar histórico:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getServiceIcon = (service: string): keyof typeof Ionicons.glyphMap => {
+    const s = service.toLowerCase();
+    if (s.includes('óleo')) return 'oil-drop' as any; // Fallback if not in normal glyphs
+    if (s.includes('pneu')) return 'construct';
+    if (s.includes('revisão')) return 'build';
+    return 'settings';
+  };
 
   return (
     <View style={styles.container}>
@@ -121,28 +125,38 @@ export default function DetalhesVeiculoScreen() {
         {/* SECTION: ÚLTIMAS MANUTENÇÕES */}
         <View style={styles.maintenanceSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Últimas Manutenções</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>Ver todas</Text>
+            <Text style={styles.sectionTitle}>Histórico de Revisões</Text>
+            <TouchableOpacity onPress={fetchMaintenanceHistory}>
+              <Ionicons name="refresh" size={18} color="#4A90E2" />
             </TouchableOpacity>
           </View>
 
-          {MOCK_MAINTENANCES.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={styles.maintenanceCard}
-              onPress={() => setSelectedMaintenance(item)}
-            >
-              <View style={styles.mIconContainer}>
-                <Ionicons name={item.icon} size={20} color="#4A90E2" />
-              </View>
-              <View style={styles.mInfo}>
-                <Text style={styles.mDescription}>{item.description}</Text>
-                <Text style={styles.mDate}>{item.date}</Text>
-              </View>
-              <Text style={styles.mValue}>{item.value}</Text>
-            </TouchableOpacity>
-          ))}
+          {loading ? (
+            <ActivityIndicator size="large" color="#4A90E2" style={{ marginVertical: 20 }} />
+          ) : maintenances.length > 0 ? (
+            maintenances.map((item) => (
+              <TouchableOpacity 
+                key={item.id} 
+                style={styles.maintenanceCard}
+                onPress={() => setSelectedMaintenance(item)}
+              >
+                <View style={styles.mIconContainer}>
+                  <Ionicons name={getServiceIcon(item.service)} size={20} color="#4A90E2" />
+                </View>
+                <View style={styles.mInfo}>
+                  <Text style={styles.mDescription}>{item.service}</Text>
+                  <Text style={styles.mDate}>{item.date}</Text>
+                </View>
+                <Text style={styles.mValue}>
+                  {item.cost ? `R$ ${parseFloat(String(item.cost)).toFixed(2)}` : 'Concluído'}
+                </Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyMaintenance}>
+              <Text style={styles.emptyMaintenanceText}>Nenhuma manutenção registrada.</Text>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity style={styles.editButton} onPress={() => alert('Funcionalidade de edição em breve!')}>
@@ -168,15 +182,17 @@ export default function DetalhesVeiculoScreen() {
               <>
                 <View style={styles.modalHeader}>
                   <View style={styles.modalIconContainer}>
-                    <Ionicons name={selectedMaintenance.icon} size={32} color="#4A90E2" />
+                    <Ionicons name={getServiceIcon(selectedMaintenance.service)} size={32} color="#4A90E2" />
                   </View>
                   <TouchableOpacity onPress={() => setSelectedMaintenance(null)} style={styles.closeButton}>
                     <Ionicons name="close" size={24} color="#64748B" />
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.modalTitle}>{selectedMaintenance.description}</Text>
-                <Text style={styles.modalValue}>{selectedMaintenance.value}</Text>
+                <Text style={styles.modalTitle}>{selectedMaintenance.service}</Text>
+                <Text style={styles.modalValue}>
+                  {selectedMaintenance.cost ? `R$ ${parseFloat(String(selectedMaintenance.cost)).toFixed(2)}` : 'Concluído'}
+                </Text>
 
                 <View style={styles.modalGrid}>
                   <View style={styles.modalGridItem}>
@@ -184,17 +200,32 @@ export default function DetalhesVeiculoScreen() {
                     <Text style={styles.modalValueSmall}>{selectedMaintenance.date}</Text>
                   </View>
                   <View style={styles.modalGridItem}>
-                    <Text style={styles.modalLabel}>Local/Oficina</Text>
-                    <Text style={styles.modalValueSmall}>{selectedMaintenance.provider || 'N/A'}</Text>
+                    <Text style={styles.modalLabel}>Oficina</Text>
+                    <Text style={styles.modalValueSmall}>{selectedMaintenance.workshop_name || 'FixCar Workshop'}</Text>
                   </View>
                 </View>
 
-                {selectedMaintenance.notes && (
+                {selectedMaintenance.details && (
                   <View style={styles.notesSection}>
-                    <Text style={styles.modalLabel}>Observações</Text>
+                    <Text style={styles.modalLabel}>O que foi feito</Text>
                     <View style={styles.notesContainer}>
-                      <Text style={styles.notesText}>{selectedMaintenance.notes}</Text>
+                      <Text style={styles.notesText}>{selectedMaintenance.details}</Text>
                     </View>
+                  </View>
+                )}
+
+                {selectedMaintenance.parts_images && (
+                  <View style={{ marginBottom: 20 }}>
+                    <Text style={styles.modalLabel}>Fotos das peças trocadas</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                      {JSON.parse(selectedMaintenance.parts_images).map((img: string, idx: number) => (
+                        <Image 
+                          key={idx} 
+                          source={{ uri: img }} 
+                          style={{ width: 100, height: 100, borderRadius: 12, marginRight: 12 }} 
+                        />
+                      ))}
+                    </ScrollView>
                   </View>
                 )}
 
@@ -212,255 +243,3 @@ export default function DetalhesVeiculoScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  backButton: {
-    marginLeft: 16,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  headerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  modelTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  plateBadge: {
-    backgroundColor: '#4A90E2',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  plateText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 2,
-  },
-  detailsContainer: {
-    backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 20,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  detailItem: {
-    marginVertical: 8,
-  },
-  label: {
-    fontSize: 10,
-    color: '#64748B',
-    textTransform: 'uppercase',
-    fontWeight: '600',
-    marginBottom: 2,
-    letterSpacing: 0.5,
-  },
-  value: {
-    fontSize: 16,
-    color: '#1E293B',
-    fontWeight: '700',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    width: '100%',
-  },
-  maintenanceSection: {
-    width: '100%',
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  seeAllText: {
-    color: '#4A90E2',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  maintenanceCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  mIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#F0F7FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  mInfo: {
-    flex: 1,
-  },
-  mDescription: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  mDate: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  mValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#10B981',
-  },
-  editButton: {
-    backgroundColor: '#4A90E2',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 16,
-    width: '100%',
-    gap: 8,
-  },
-  editButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderRadius: 32,
-    padding: 24,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  modalIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  modalValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#10B981',
-    marginBottom: 24,
-  },
-  modalGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
-  modalGridItem: {
-    flex: 1,
-  },
-  modalLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    textTransform: 'uppercase',
-    fontWeight: '600',
-    marginBottom: 4,
-    letterSpacing: 0.5,
-  },
-  modalValueSmall: {
-    fontSize: 16,
-    color: '#1E293B',
-    fontWeight: '700',
-  },
-  notesSection: {
-    marginBottom: 32,
-  },
-  notesContainer: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  notesText: {
-    fontSize: 14,
-    color: '#334155',
-    lineHeight: 20,
-  },
-  confirmButton: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  confirmButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});

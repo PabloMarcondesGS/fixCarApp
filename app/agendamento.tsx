@@ -24,6 +24,7 @@ interface Appointment {
   vehiclePlate: string;
   date: string;
   time: string;
+  service?: string;
   user_id?: string;
 }
 
@@ -47,10 +48,39 @@ export default function AgendamentoScreen() {
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<number>(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<string>('Revisão');
+  const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
 
   useEffect(() => {
     loadVehicles();
   }, []);
+
+  useEffect(() => {
+    if (workshopId && days[selectedDate]) {
+      fetchAvailability();
+    }
+  }, [selectedDate, workshopId]);
+
+  const fetchAvailability = async () => {
+    setLoadingAvailability(true);
+    try {
+      const date = days[selectedDate].fullDate;
+      const response = await fetch(`${API_ENDPOINTS.APPOINTMENTS}?workshopId=${workshopId}&date=${date}`);
+      const data = await response.json();
+      const slots = data.map((appt: any) => appt.time);
+      setOccupiedSlots(slots);
+      
+      // Se o horário selecionado ficou indisponível, limpa a seleção
+      if (selectedTime && slots.includes(selectedTime)) {
+        setSelectedTime(null);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar disponibilidade:', error);
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
 
   const loadVehicles = async () => {
     try {
@@ -104,6 +134,7 @@ export default function AgendamentoScreen() {
       vehiclePlate: vehicle?.plate || '',
       date: days[selectedDate].fullDate,
       time: selectedTime,
+      service: selectedService,
       user_id: userInfo?.id
     };
     
@@ -224,19 +255,49 @@ export default function AgendamentoScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Horários Disponíveis</Text>
-          <View style={styles.timeGrid}>
-            {TIME_SLOTS.map((time) => (
+          <Text style={styles.sectionLabel}>Tipo de Serviço</Text>
+          <View style={styles.serviceGrid}>
+            {['Revisão', 'Troca de Óleo', 'Mecânica Geral', 'Elétrica'].map((service) => (
               <TouchableOpacity
-                key={time}
-                style={[styles.timeCard, selectedTime === time && styles.timeCardSelected]}
-                onPress={() => setSelectedTime(time)}
+                key={service}
+                style={[styles.serviceCard, selectedService === service && styles.serviceCardSelected]}
+                onPress={() => setSelectedService(service)}
               >
-                <Text style={[styles.timeText, selectedTime === time && styles.textSelected]}>
-                  {time}
+                <Text style={[styles.serviceText, selectedService === service && styles.textSelected]}>
+                  {service}
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Horários Disponíveis</Text>
+          <View style={styles.timeGrid}>
+            {TIME_SLOTS.map((time) => {
+              const isOccupied = occupiedSlots.includes(time);
+              return (
+                <TouchableOpacity
+                  key={time}
+                  disabled={isOccupied}
+                  style={[
+                    styles.timeCard, 
+                    selectedTime === time && styles.timeCardSelected,
+                    isOccupied && styles.timeCardDisabled
+                  ]}
+                  onPress={() => setSelectedTime(time)}
+                >
+                  <Text style={[
+                    styles.timeText, 
+                    selectedTime === time && styles.textSelected,
+                    isOccupied && styles.textDisabled
+                  ]}>
+                    {time}
+                  </Text>
+                  {isOccupied && <Text style={styles.occupiedText}>Ocupado</Text>}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       </ScrollView>
@@ -401,6 +462,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#475569',
   },
+  serviceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  serviceCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  serviceCardSelected: {
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+  },
+  serviceText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+  },
   textSelected: {
     color: '#FFF',
   },
@@ -425,5 +508,19 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  timeCardDisabled: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+    opacity: 0.6,
+  },
+  textDisabled: {
+    color: '#94A3B8',
+  },
+  occupiedText: {
+    fontSize: 9,
+    color: '#EF4444',
+    fontWeight: '700',
+    marginTop: 2,
   },
 });

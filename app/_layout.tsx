@@ -96,6 +96,25 @@ function RootLayoutContent() {
         }}
       />
       <Drawer.Screen
+        name="revisoes-oficina"
+        options={{
+          drawerLabel: 'Listar Revisões',
+          title: 'Revisões Agendadas',
+          drawerItemStyle: isWorkshop ? {} : { display: 'none' },
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="detalhes-revisao-oficina"
+        options={{
+          drawerLabel: 'Detalhes da Revisão',
+          title: 'Detalhamento',
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
         name="veiculos"
         options={{
           drawerLabel: 'Meus Veículos',

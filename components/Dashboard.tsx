@@ -11,12 +11,17 @@ const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
 
 interface Appointment {
   id: string;
-  workshopName: string;
-  workshopAddress?: string;
-  vehicleModel: string;
-  vehiclePlate: string;
+  workshop_name?: string;
+  workshopName?: string; // Legacy support
+  workshop_address?: string;
+  workshopAddress?: string; // Legacy support
+  model: string;
+  plate: string;
+  vehicleModel?: string; // Legacy support
+  vehiclePlate?: string; // Legacy support
   date: string;
   time: string;
+  status: string;
 }
 
 export interface UserInfo {
@@ -41,7 +46,7 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [])
+    }, [userInfo])
   );
 
   const loadData = async () => {
@@ -71,10 +76,15 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
       
       const response = await fetch(url);
       const data: Appointment[] = await response.json();
-      setAppointmentCount(data.length);
-      if (data.length > 0) {
-        // Simplificação: pega o último agendamento feito como "próximo"
-        setNextAppointment(data[data.length - 1]);
+      
+      // Filtrar apenas agendamentos não concluídos para o "Próximo"
+      const pendingAppointments = data.filter(app => app.status !== 'Concluído');
+      
+      setAppointmentCount(data.length); // Total de revisões (histórico inclui concluídas)
+      
+      if (pendingAppointments.length > 0) {
+        // Pega o agendamento mais próximo (neste caso, o último da lista filtrada para simplificar)
+        setNextAppointment(pendingAppointments[pendingAppointments.length - 1]);
       } else {
         setNextAppointment(null);
       }
@@ -115,33 +125,18 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
         {isWorkshop ? (
           <View style={styles.workshopSection}>
             <Text style={styles.sectionTitle}>Próximos Agendamentos</Text>
-            {appointmentCount === 0 ? (
-              <Text style={styles.emptyText}>Nenhum agendamento encontrado.</Text>
+            {!nextAppointment ? (
+              <Text style={styles.emptyText}>Nenhum agendamento pendente.</Text>
             ) : (
-              // Mostra todos os agendamentos para a oficina
               <View>
-                {/* Aqui poderíamos iterar sobre uma lista completa de agendamentos se tivéssemos o estado */}
-                {/* Por simplicidade no MVP, vamos mostrar o próximo agendamento com um estilo de lista */}
                 <View style={styles.nextAppointmentCard}>
                    <View style={styles.nextAppointmentContent}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.nextAppointmentWorkshop}>{nextAppointment?.vehicleModel || 'Carro'} - {nextAppointment?.vehiclePlate}</Text>
-                        <Text style={styles.nextAppointmentDetail}>Serviço agendado para {nextAppointment?.date}</Text>
+                        <Text style={styles.nextAppointmentWorkshop}>{nextAppointment.model} - {nextAppointment.plate}</Text>
+                        <Text style={styles.nextAppointmentDetail}>Serviço agendado para {nextAppointment.date}</Text>
                       </View>
                       <View style={styles.timeBadge}>
-                        <Text style={styles.timeBadgeText}>{nextAppointment?.time}</Text>
-                      </View>
-                   </View>
-                </View>
-                {/* Simulação de outros itens para visualização */}
-                <View style={[styles.nextAppointmentCard, { opacity: 0.7 }]}>
-                   <View style={styles.nextAppointmentContent}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.nextAppointmentWorkshop}>Honda Civic - ABC-1234</Text>
-                        <Text style={styles.nextAppointmentDetail}>Troca de Óleo • 15/04</Text>
-                      </View>
-                      <View style={[styles.timeBadge, { backgroundColor: '#E2E8F0' }]}>
-                        <Text style={[styles.timeBadgeText, { color: '#64748B' }]}>14:30</Text>
+                        <Text style={styles.timeBadgeText}>{nextAppointment.time}</Text>
                       </View>
                    </View>
                 </View>
@@ -152,11 +147,11 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
               <View style={styles.statBox}>
                 <Ionicons name="calendar-outline" size={24} color="#4A90E2" style={{ marginBottom: 4 }} />
                 <Text style={styles.statNumber}>{appointmentCount}</Text>
-                <Text style={styles.statLabel}>Agendamentos</Text>
+                <Text style={styles.statLabel}>Total Registros</Text>
               </View>
               <View style={styles.statBox}>
                 <Ionicons name="lock-closed-outline" size={24} color="#4A90E2" style={{ marginBottom: 4 }} />
-                <Text style={styles.statNumber}>3</Text>
+                <Text style={styles.statNumber}>0</Text>
                 <Text style={styles.statLabel}>Bloqueios</Text>
               </View>
             </View>
@@ -170,8 +165,8 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
                 </View>
                 <View style={styles.nextAppointmentContent}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.nextAppointmentWorkshop}>{nextAppointment.workshopName}</Text>
-                    <Text style={styles.nextAppointmentDetail}>{nextAppointment.vehicleModel} • {nextAppointment.vehiclePlate}</Text>
+                    <Text style={styles.nextAppointmentWorkshop}>{nextAppointment.workshop_name || 'Oficina FixCar'}</Text>
+                    <Text style={styles.nextAppointmentDetail}>{nextAppointment.model} • {nextAppointment.plate}</Text>
                   </View>
                   <Ionicons name="calendar-outline" size={32} color="#4A90E2" />
                 </View>
@@ -180,10 +175,10 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
                   <Text style={styles.nextAppointmentDate}>{nextAppointment.date} às {nextAppointment.time}</Text>
                 </View>
 
-                {nextAppointment.workshopAddress && (
+                {(nextAppointment.workshop_address || nextAppointment.workshopAddress) && (
                   <TouchableOpacity 
                     style={styles.addressButton} 
-                    onPress={() => handleOpenAddress(nextAppointment.workshopAddress!)}
+                    onPress={() => handleOpenAddress(String(nextAppointment.workshop_address || nextAppointment.workshopAddress))}
                   >
                     <Ionicons name="map-outline" size={20} color="#4A90E2" />
                     <Text style={styles.addressButtonText}>Ver Endereço</Text>
@@ -194,8 +189,12 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
 
             <View style={styles.card}>
               <Ionicons name="car-sport" size={40} color="#4A90E2" style={{ marginBottom: 10 }} />
-              <Text style={styles.cardTitle}>Gerencie seus veículos</Text>
-              <Text style={styles.cardDescription}>Acompanhe o status dos seus veículos, registros de manutenção e histórico completo em um só lugar.</Text>
+              <Text style={styles.cardTitle}>{nextAppointment ? 'Gerencie seus veículos' : 'Sua garagem está em dia!'}</Text>
+              <Text style={styles.cardDescription}>
+                {nextAppointment 
+                  ? 'Acompanhe o status dos seus veículos, registros de manutenção e histórico completo em um só lugar.' 
+                  : 'Você não tem revisões pendentes no momento. Que tal agendar uma verificação preventiva?'}
+              </Text>
             </View>
 
             <View style={styles.statsContainer}>

@@ -6,5 +6,7 @@ export const API_ENDPOINTS = {
   WORKSHOPS: `${API_BASE_URL}/workshops`,
   VEHICLES: `${API_BASE_URL}/vehicles`,
   APPOINTMENTS: `${API_BASE_URL}/appointments`,
-  PLANS: `${API_BASE_URL}/plans`
+  PLANS: `${API_BASE_URL}/plans`,
+  LOGIN: `${API_BASE_URL}/login`,
+  BLOCKED_SLOTS: `${API_BASE_URL}/blocked-slots`
 };

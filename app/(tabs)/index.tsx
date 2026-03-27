@@ -1,5 +1,4 @@
-// ... imports mantidos (apenas o que mudou abaixoo)
-import { StyleSheet, TouchableOpacity, Text, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, Text, View, TextInput, ActivityIndicator, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session';
@@ -9,11 +8,16 @@ import { useState, useEffect } from 'react';
 import Dashboard, { UserInfo } from '@/components/Dashboard';
 
 import { useAuth } from '@/context/AuthContext';
+import { API_ENDPOINTS } from '@/constants/Api';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function HomeScreen() {
   const { isAuthenticated, login, logout, accessToken, userInfo } = useAuth();
+  const [isWorkshopMode, setIsWorkshopMode] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: "203284143716-opfmi37sbfb76etc99afrli04l90u3vr.apps.googleusercontent.com",
@@ -35,9 +39,51 @@ export default function HomeScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = await resp.json();
-      login(token, user);
+      login(token, {
+        id: user.id || user.sub, // Google id
+        name: user.name,
+        picture: user.picture,
+        email: user.email,
+        role: 'client'
+      });
     } catch (error) {
       console.log('Erro ao buscar dados do usuário:', error);
+    }
+  };
+
+  const handleWorkshopLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Erro', 'Preencha usuário e senha.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await fetch(API_ENDPOINTS.LOGIN, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok) {
+        login(data.accessToken, {
+          id: data.id,
+          name: data.name,
+          picture: 'https://ui-avatars.com/api/?name=' + data.name,
+          email: data.username + '@oficina.com',
+          role: data.role,
+          workshop_id: data.workshop_id
+        });
+      } else {
+        Alert.alert('Erro', data.error || 'Credenciais inválidas.');
+      }
+    } catch (error) {
+      console.log('Erro ao fazer login:', error);
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,19 +96,64 @@ export default function HomeScreen() {
       <View style={styles.headerContainer}>
         <Ionicons name="planet" size={80} color="#4A90E2" style={styles.icon} />
         <Text style={styles.title}>Bem-vindo</Text>
-        <Text style={styles.subtitle}>Faça login para continuar explorando o universo do seu novo app.</Text>
+        <Text style={styles.subtitle}>
+          {isWorkshopMode ? 'Área da Oficina: Entre com suas credenciais.' : 'Faça login para continuar explorando o universo do seu novo app.'}
+        </Text>
       </View>
 
       <View style={styles.formContainer}>
-        <TouchableOpacity 
-          style={[styles.button, !request && styles.buttonDisabled]} 
-          disabled={!request}
-          activeOpacity={0.8}
-          onPress={() => promptAsync()}
-        >
-          <Ionicons name="logo-google" size={24} color="#FFF" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Continuar com o Google</Text>
-        </TouchableOpacity>
+        {!isWorkshopMode ? (
+          <>
+            <TouchableOpacity 
+              style={[styles.button, !request && styles.buttonDisabled]} 
+              disabled={!request}
+              activeOpacity={0.8}
+              onPress={() => promptAsync()}
+            >
+              <Ionicons name="logo-google" size={24} color="#FFF" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Continuar com o Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.workshopToggle}
+              onPress={() => setIsWorkshopMode(true)}
+            >
+              <Text style={styles.workshopToggleText}>Sou Oficina</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <View style={styles.loginForm}>
+            <TextInput
+              style={styles.input}
+              placeholder="Usuário"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            
+            <TouchableOpacity 
+              style={styles.button}
+              onPress={handleWorkshopLogin}
+              disabled={loading}
+            >
+              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Entrar</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => setIsWorkshopMode(false)}
+            >
+              <Text style={styles.backButtonText}>Voltar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {response?.type === 'error' && (
           <View style={styles.errorBox}>
@@ -137,6 +228,37 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  workshopToggle: {
+    marginTop: 20,
+    padding: 10,
+  },
+  workshopToggleText: {
+    color: '#4A90E2',
+    fontSize: 16,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  loginForm: {
+    width: '100%',
+  },
+  input: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+  },
+  backButton: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: '#666',
+    fontSize: 14,
   },
   errorBox: {
     flexDirection: 'row',

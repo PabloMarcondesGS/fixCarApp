@@ -208,4 +208,34 @@ export const styles = StyleSheet.create({
     color: '#4A90E2',
     marginLeft: 8,
   },
+  workshopSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 20,
+    letterSpacing: -0.5,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: 40,
+    marginBottom: 40,
+  },
+  timeBadge: {
+    backgroundColor: '#E1F0FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  timeBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4A90E2',
+  },
 });

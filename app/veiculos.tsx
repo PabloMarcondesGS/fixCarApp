@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Image, ActivityIndicator } from 'react-native';
 import { API_ENDPOINTS } from '@/constants/Api';
+import { useAuth } from '@/context/AuthContext';
 
 // Storage Key
 const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
@@ -30,6 +31,7 @@ interface Vehicle {
 }
 
 export default function VeiculosScreen() {
+  const { userInfo } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,8 @@ export default function VeiculosScreen() {
   const loadVehicles = async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_ENDPOINTS.VEHICLES);
+      const url = userInfo?.id ? `${API_ENDPOINTS.VEHICLES}?userId=${userInfo.id}` : API_ENDPOINTS.VEHICLES;
+      const response = await fetch(url);
       const data = await response.json();
       setVehicles(data);
     } catch (e) {
@@ -106,6 +109,7 @@ export default function VeiculosScreen() {
       type,
       imageUri: imageUri || undefined,
       plan,
+      user_id: userInfo?.id,
     };
 
     try {

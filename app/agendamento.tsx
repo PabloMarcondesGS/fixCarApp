@@ -4,6 +4,7 @@ import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_ENDPOINTS } from '@/constants/Api';
+import { useAuth } from '@/context/AuthContext';
 
 const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
 const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
@@ -23,6 +24,7 @@ interface Appointment {
   vehiclePlate: string;
   date: string;
   time: string;
+  user_id?: string;
 }
 
 interface Vehicle {
@@ -35,6 +37,7 @@ interface Vehicle {
 }
 
 export default function AgendamentoScreen() {
+  const { userInfo } = useAuth();
   const params = useLocalSearchParams();
   const workshopId = params.workshopId as string;
   const workshopName = params.workshopName as string || 'Oficina';
@@ -51,7 +54,8 @@ export default function AgendamentoScreen() {
 
   const loadVehicles = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.VEHICLES);
+      const url = userInfo?.id ? `${API_ENDPOINTS.VEHICLES}?userId=${userInfo.id}` : API_ENDPOINTS.VEHICLES;
+      const response = await fetch(url);
       const data = await response.json();
       setVehicles(data);
       if (data.length > 0) {
@@ -100,6 +104,7 @@ export default function AgendamentoScreen() {
       vehiclePlate: vehicle?.plate || '',
       date: days[selectedDate].fullDate,
       time: selectedTime,
+      user_id: userInfo?.id
     };
     
     sendAppointmentToBackend(newAppointment);

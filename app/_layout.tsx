@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { View, ActivityIndicator } from 'react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -14,7 +15,17 @@ export const unstable_settings = {
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userInfo, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FF8F00" />
+      </View>
+    );
+  }
+
+  const isWorkshop = userInfo?.role === 'workshop';
 
   if (!isAuthenticated) {
     return (
@@ -62,26 +73,50 @@ function RootLayoutContent() {
           ),
         }}
       />
-        <Drawer.Screen
-          name="veiculos"
-          options={{
-            drawerLabel: 'Meus Veículos',
-            title: 'Meus Veículos',
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="car-outline" size={size} color={color} />
-            ),
-          }}
-        />
-        <Drawer.Screen
-          name="oficinas"
-          options={{
-            drawerLabel: 'Oficinas',
-            title: 'Oficinas Parceiras',
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="construct-outline" size={size} color={color} />
-            ),
-          }}
-        />
+      <Drawer.Screen
+        name="perfil-oficina"
+        options={{
+          drawerLabel: 'Dados da Oficina',
+          title: 'Configurar Oficina',
+          drawerItemStyle: isWorkshop ? {} : { display: 'none' },
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="bloqueio"
+        options={{
+          drawerLabel: 'Bloquear Horários',
+          title: 'Gerenciar Agenda',
+          drawerItemStyle: isWorkshop ? {} : { display: 'none' },
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="lock-closed-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="veiculos"
+        options={{
+          drawerLabel: 'Meus Veículos',
+          title: 'Meus Veículos',
+          drawerItemStyle: isWorkshop ? { display: 'none' } : {},
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="car-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="oficinas"
+        options={{
+          drawerLabel: 'Oficinas',
+          title: 'Oficinas Parceiras',
+          drawerItemStyle: isWorkshop ? { display: 'none' } : {},
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="construct-outline" size={size} color={color} />
+          ),
+        }}
+      />
         <Drawer.Screen
           name="detalhes-veiculo"
           options={{

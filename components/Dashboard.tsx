@@ -6,8 +6,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { styles } from './Dashboard.styles';
 import { API_ENDPOINTS } from '@/constants/Api';
 
-const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
-const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
+const STORAGE_KEY = '@autocare:veiculos_v2';
+const APPOINTMENTS_KEY = '@autocare:agendamentos';
 
 interface Appointment {
   id: string;
@@ -165,7 +165,7 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
                 </View>
                 <View style={styles.nextAppointmentContent}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.nextAppointmentWorkshop}>{nextAppointment.workshop_name || 'Oficina FixCar'}</Text>
+                    <Text style={styles.nextAppointmentWorkshop}>{nextAppointment.workshop_name || 'Oficina AutoCare'}</Text>
                     <Text style={styles.nextAppointmentDetail}>{nextAppointment.model} • {nextAppointment.plate}</Text>
                   </View>
                   <Ionicons name="calendar-outline" size={32} color="#4A90E2" />

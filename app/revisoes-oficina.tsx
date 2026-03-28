@@ -92,11 +92,11 @@ export default function RevisoesOficinaScreen() {
         
         <View style={styles.dateTimeRow}>
           <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={18} color="#4A90E2" />
+            <Ionicons name="calendar-outline" size={18} color="#FF8F00" />
             <Text style={styles.dateTimeText}>{item.date}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={18} color="#4A90E2" />
+            <Ionicons name="time-outline" size={18} color="#FF8F00" />
             <Text style={styles.dateTimeText}>{item.time}</Text>
           </View>
         </View>
@@ -107,7 +107,7 @@ export default function RevisoesOficinaScreen() {
         onPress={() => router.push({ pathname: '/detalhes-revisao-oficina', params: { id: item.id } })}
       >
         <Text style={styles.detailsButtonText}>Detallar o que foi feito</Text>
-        <Ionicons name="create-outline" size={16} color="#4A90E2" />
+        <Ionicons name="create-outline" size={16} color="#FF8F00" />
       </TouchableOpacity>
     </View>
   );
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   serviceText: {
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   detailsButtonText: {
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontSize: 14,
     fontWeight: '700',
   },

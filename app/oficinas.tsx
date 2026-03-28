@@ -135,7 +135,7 @@ export default function OficinasScreen() {
           style={styles.mapButton}
           onPress={() => handleOpenMap(item.address)}
         >
-          <Ionicons name="map-outline" size={18} color="#4A90E2" />
+          <Ionicons name="map-outline" size={18} color="#FF8F00" />
           <Text style={styles.mapButtonText}>Ver no Mapa</Text>
         </TouchableOpacity>
       </View>
@@ -160,7 +160,7 @@ export default function OficinasScreen() {
 
       {loading ? (
         <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color="#4A90E2" />
+          <ActivityIndicator size="large" color="#FF8F00" />
           <Text style={styles.emptyText}>Carregando oficinas...</Text>
         </View>
       ) : (

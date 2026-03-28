@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   plate: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#4A90E2',
+    color: '#FF8F00',
     letterSpacing: 1,
   },
   color: {
@@ -77,11 +77,11 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 5,
-    shadowColor: '#4A90E2',
+    shadowColor: '#FF8F00',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   imagePlaceholderText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontWeight: '600',
   },
   removeImageButton: {
@@ -179,8 +179,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   typeButtonActive: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
+    borderColor: '#FF8F00',
   },
   typeButtonText: {
     fontSize: 14,
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   submitButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',

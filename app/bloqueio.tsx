@@ -124,12 +124,12 @@ export default function BloqueioScreen() {
             <Calendar
               onDayPress={(day: any) => setDate(day.dateString)}
               markedDates={{
-                [date]: { selected: true, disableTouchEvent: true, selectedColor: '#4A90E2' }
+                [date]: { selected: true, disableTouchEvent: true, selectedColor: '#FF8F00' }
               }}
               theme={{
-                todayTextColor: '#4A90E2',
-                selectedDayBackgroundColor: '#4A90E2',
-                arrowColor: '#4A90E2',
+                todayTextColor: '#FF8F00',
+                selectedDayBackgroundColor: '#FF8F00',
+                arrowColor: '#FF8F00',
                 textDayFontWeight: '600',
                 textMonthFontWeight: 'bold',
                 textDayHeaderFontWeight: '600',
@@ -287,8 +287,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   timeCardSelected: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
+    borderColor: '#FF8F00',
   },
   timeText: {
     fontSize: 16,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   button: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',

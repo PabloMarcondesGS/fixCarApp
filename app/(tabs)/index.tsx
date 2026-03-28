@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, Text, View, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, Text, View, TextInput, ActivityIndicator, Alert, Image } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session';
@@ -96,8 +96,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Ionicons name="planet" size={80} color="#4A90E2" style={styles.icon} />
-        <Text style={styles.title}>Bem-vindo</Text>
+        <Image 
+          source={require('@/assets/images/logo-autocare.jpg')} 
+          style={styles.logoImage} 
+          resizeMode="contain" 
+        />
+        <Text style={styles.title}>AutoCare</Text>
         <Text style={styles.subtitle}>
           {isWorkshopMode ? 'Área da Oficina: Entre com suas credenciais.' : 'Faça login para continuar explorando o universo do seu novo app.'}
         </Text>
@@ -179,12 +183,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 60,
   },
-  icon: {
+  logoImage: {
+    width: 250,
+    height: 120,
     marginBottom: 20,
-    shadowColor: '#4A90E2',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
   },
   title: {
     fontSize: 32,
@@ -206,21 +208,21 @@ const styles = StyleSheet.create({
   },
   button: {
     flexDirection: 'row',
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    shadowColor: '#4A90E2',
+    shadowColor: '#FF8F00',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 8,
   },
   buttonDisabled: {
-    backgroundColor: '#A0C4E8',
+    backgroundColor: '#FFC680',
     shadowOpacity: 0.1,
   },
   buttonIcon: {
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   workshopToggleText: {
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontSize: 16,
     fontWeight: '600',
     textDecorationLine: 'underline',

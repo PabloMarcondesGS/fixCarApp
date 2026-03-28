@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import styles from '@/styles/detalhes-veiculo.styles';
 import { API_ENDPOINTS } from '@/constants/Api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Maintenance {
   id: string;
@@ -12,8 +13,10 @@ interface Maintenance {
   status: string;
   cost?: number;
   details?: string;
+  workshop_id: string;
   workshop_name?: string;
   parts_images?: string; // JSON string
+  rated: number;
 }
 
 export default function DetalhesVeiculoScreen() {
@@ -22,6 +25,12 @@ export default function DetalhesVeiculoScreen() {
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
   const [loading, setLoading] = useState(true);
+  const { userInfo } = useAuth();
+
+  // Rating State
+  const [rating, setRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   // Parse params
   const { id, model, plate, color, type, imageUri } = params;
@@ -55,6 +64,48 @@ export default function DetalhesVeiculoScreen() {
     return 'settings';
   };
 
+  const handleSubmitReview = async () => {
+    if (!selectedMaintenance || rating === 0) {
+      Alert.alert('Atenção', 'Por favor, selecione uma nota de 1 a 5 estrelas.');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const response = await fetch(API_ENDPOINTS.REVIEWS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workshop_id: selectedMaintenance.workshop_id,
+          appointment_id: selectedMaintenance.id,
+          user_id: userInfo?.id,
+          userName: userInfo?.name || 'Cliente',
+          rating: rating,
+          comment: reviewComment
+        }),
+      });
+
+      if (response.ok) {
+        Alert.alert('Sucesso', 'Sua avaliação foi enviada! Obrigado.');
+        
+        // Atualiza o estado local para marcar como avaliado
+        setMaintenances(prev => prev.map(m => 
+          m.id === selectedMaintenance.id ? { ...m, rated: 1 } : m
+        ));
+        setSelectedMaintenance(null);
+        setRating(0);
+        setReviewComment('');
+      } else {
+        Alert.alert('Erro', 'Não foi possível enviar a avaliação.');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar review:', error);
+      Alert.alert('Erro', 'Falha na conexão com o servidor.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen 
@@ -62,7 +113,7 @@ export default function DetalhesVeiculoScreen() {
           title: 'Detalhes do Veículo',
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+              <Ionicons name="arrow-back" size={24} color="#FF8F00" />
             </TouchableOpacity>
           ),
         }} 
@@ -77,7 +128,7 @@ export default function DetalhesVeiculoScreen() {
               <Ionicons 
                 name={type === 'Carro' ? 'car' : 'bicycle'} 
                 size={64} 
-                color="#4A90E2" 
+                color="#FF8F00" 
               />
             )}
           </View>
@@ -127,12 +178,12 @@ export default function DetalhesVeiculoScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Histórico de Revisões</Text>
             <TouchableOpacity onPress={fetchMaintenanceHistory}>
-              <Ionicons name="refresh" size={18} color="#4A90E2" />
+              <Ionicons name="refresh" size={18} color="#FF8F00" />
             </TouchableOpacity>
           </View>
 
           {loading ? (
-            <ActivityIndicator size="large" color="#4A90E2" style={{ marginVertical: 20 }} />
+            <ActivityIndicator size="large" color="#FF8F00" style={{ marginVertical: 20 }} />
           ) : maintenances.length > 0 ? (
             maintenances.map((item) => (
               <TouchableOpacity 
@@ -141,7 +192,7 @@ export default function DetalhesVeiculoScreen() {
                 onPress={() => setSelectedMaintenance(item)}
               >
                 <View style={styles.mIconContainer}>
-                  <Ionicons name={getServiceIcon(item.service)} size={20} color="#4A90E2" />
+                  <Ionicons name={getServiceIcon(item.service)} size={20} color="#FF8F00" />
                 </View>
                 <View style={styles.mInfo}>
                   <Text style={styles.mDescription}>{item.service}</Text>
@@ -182,7 +233,7 @@ export default function DetalhesVeiculoScreen() {
               <>
                 <View style={styles.modalHeader}>
                   <View style={styles.modalIconContainer}>
-                    <Ionicons name={getServiceIcon(selectedMaintenance.service)} size={32} color="#4A90E2" />
+                    <Ionicons name={getServiceIcon(selectedMaintenance.service)} size={32} color="#FF8F00" />
                   </View>
                   <TouchableOpacity onPress={() => setSelectedMaintenance(null)} style={styles.closeButton}>
                     <Ionicons name="close" size={24} color="#64748B" />
@@ -201,7 +252,7 @@ export default function DetalhesVeiculoScreen() {
                   </View>
                   <View style={styles.modalGridItem}>
                     <Text style={styles.modalLabel}>Oficina</Text>
-                    <Text style={styles.modalValueSmall}>{selectedMaintenance.workshop_name || 'FixCar Workshop'}</Text>
+                    <Text style={styles.modalValueSmall}>{selectedMaintenance.workshop_name || 'AutoCare Workshop'}</Text>
                   </View>
                 </View>
 
@@ -229,8 +280,59 @@ export default function DetalhesVeiculoScreen() {
                   </View>
                 )}
 
+                {/* AREA DE AVALIAÇÃO */}
+                <View style={styles.ratingSection}>
+                  <Text style={styles.modalLabel}>Sua Avaliação</Text>
+                  
+                  {selectedMaintenance.rated === 1 ? (
+                    <View style={styles.ratedBadge}>
+                      <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                      <Text style={styles.ratedText}>Você já avaliou este serviço</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <View style={styles.starsContainer}>
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <TouchableOpacity 
+                            key={s} 
+                            onPress={() => setRating(s)}
+                            style={styles.starButton}
+                          >
+                            <Ionicons 
+                              name={rating >= s ? "star" : "star-outline"} 
+                              size={32} 
+                              color={rating >= s ? "#FF8F00" : "#CBD5E1"} 
+                            />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+
+                      <TextInput
+                        style={styles.reviewInput}
+                        placeholder="Deixe um comentário sobre o serviço (opcional)"
+                        value={reviewComment}
+                        onChangeText={setReviewComment}
+                        multiline
+                        numberOfLines={3}
+                      />
+
+                      <TouchableOpacity 
+                        style={[styles.submitReviewButton, submittingReview && { opacity: 0.7 }]}
+                        onPress={handleSubmitReview}
+                        disabled={submittingReview}
+                      >
+                        {submittingReview ? (
+                          <ActivityIndicator color="#FFF" size="small" />
+                        ) : (
+                          <Text style={styles.submitReviewText}>Enviar Avaliação</Text>
+                        )}
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+
                 <TouchableOpacity 
-                  style={styles.confirmButton} 
+                  style={[styles.confirmButton, { marginTop: 24 }]} 
                   onPress={() => setSelectedMaintenance(null)}
                 >
                   <Text style={styles.confirmButtonText}>Fechar Detalhes</Text>

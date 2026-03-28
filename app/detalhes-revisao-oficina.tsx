@@ -145,7 +145,7 @@ export default function DetalhesRevisaoOficinaScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.vehicleCard}>
-            <Ionicons name="car" size={40} color="#4A90E2" />
+            <Ionicons name="car" size={40} color="#FF8F00" />
             <View>
               <Text style={styles.modelText}>{formatString(appointment.model)} ({formatString(appointment.brand)})</Text>
               <View style={styles.plateBadge}>
@@ -191,7 +191,7 @@ export default function DetalhesRevisaoOficinaScreen() {
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesContainer}>
             <TouchableOpacity style={styles.addButton} onPress={pickImage}>
-              <Ionicons name="camera-outline" size={32} color="#4A90E2" />
+              <Ionicons name="camera-outline" size={32} color="#FF8F00" />
               <Text style={styles.addButtonText}>Adicionar</Text>
             </TouchableOpacity>
 

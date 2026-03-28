@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   specialtyText: {
     fontSize: 11,
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontWeight: '600',
     textTransform: 'uppercase',
   },
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   callButton: {
     flex: 1,
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   mapButtonText: {
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   mainActionButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',

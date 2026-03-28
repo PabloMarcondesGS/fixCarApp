@@ -6,8 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_ENDPOINTS } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
-const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
-const APPOINTMENTS_KEY = '@meu-app-expo:agendamentos';
+const STORAGE_KEY = '@autocare:veiculos_v2';
+const APPOINTMENTS_KEY = '@autocare:agendamentos';
 
 const TIME_SLOTS = [
   '08:00', '09:00', '10:00', '11:00', 
@@ -209,7 +209,7 @@ export default function AgendamentoScreen() {
                       <Ionicons 
                         name={item.type === 'Carro' ? 'car' : 'bicycle'} 
                         size={24} 
-                        color={selectedVehicle === item.id ? '#FFF' : '#4A90E2'} 
+                        color={selectedVehicle === item.id ? '#FFF' : '#FF8F00'} 
                       />
                     )}
                   </View>
@@ -224,7 +224,7 @@ export default function AgendamentoScreen() {
             />
           ) : (
             <TouchableOpacity style={styles.addVehicleReminder} onPress={() => router.push('/veiculos')}>
-              <Ionicons name="add-circle-outline" size={32} color="#4A90E2" />
+              <Ionicons name="add-circle-outline" size={32} color="#FF8F00" />
               <Text style={styles.addVehicleReminderText}>Cadastre um veículo para agendar</Text>
             </TouchableOpacity>
           )}
@@ -361,8 +361,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   vehicleCardSelected: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
+    borderColor: '#FF8F00',
   },
   vehicleIconContainer: {
     width: 48,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   addVehicleReminderText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontWeight: '600',
   },
   dateList: {
@@ -425,8 +425,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   dateCardSelected: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
+    borderColor: '#FF8F00',
   },
   dayName: {
     fontSize: 12,
@@ -454,8 +454,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   timeCardSelected: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
+    borderColor: '#FF8F00',
   },
   timeText: {
     fontSize: 16,
@@ -476,8 +476,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   serviceCardSelected: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
+    borderColor: '#FF8F00',
   },
   serviceText: {
     fontSize: 14,
@@ -494,11 +494,11 @@ const styles = StyleSheet.create({
     borderTopColor: '#F1F5F9',
   },
   confirmButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#FF8F00',
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#4A90E2',
+    shadowColor: '#FF8F00',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

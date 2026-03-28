@@ -20,7 +20,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const AUTH_KEY = '@meu-app-expo:auth_v1';
+const AUTH_KEY = '@autocare:auth_v1';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

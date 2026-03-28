@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   plateText: {
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#4A90E2',
+    borderColor: '#FF8F00',
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 12,
-    color: '#4A90E2',
+    color: '#FF8F00',
     fontWeight: '700',
     marginTop: 4,
   },

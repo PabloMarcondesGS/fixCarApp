@@ -10,7 +10,7 @@ import { API_ENDPOINTS } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
 // Storage Key
-const STORAGE_KEY = '@meu-app-expo:veiculos_v2';
+const STORAGE_KEY = '@autocare:veiculos_v2';
 
 interface Plan {
   id: string;
@@ -203,7 +203,7 @@ export default function VeiculosScreen() {
             <Ionicons 
               name={item.type === 'Carro' ? 'car' : 'bicycle'} 
               size={32} 
-              color="#4A90E2" 
+              color="#FF8F00" 
             />
           )}
         </View>
@@ -236,7 +236,7 @@ export default function VeiculosScreen() {
       
       {loading ? (
         <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color="#4A90E2" />
+          <ActivityIndicator size="large" color="#FF8F00" />
           <Text style={styles.emptyText}>Carregando veículos...</Text>
         </View>
       ) : (
@@ -290,7 +290,7 @@ export default function VeiculosScreen() {
                     <Image source={{ uri: imageUri }} style={styles.imagePreview} />
                   ) : (
                     <View style={styles.imagePlaceholder}>
-                      <Ionicons name="camera-outline" size={32} color="#4A90E2" />
+                      <Ionicons name="camera-outline" size={32} color="#FF8F00" />
                       <Text style={styles.imagePlaceholderText}>Adicionar Foto</Text>
                     </View>
                   )}
@@ -346,7 +346,7 @@ export default function VeiculosScreen() {
                         <Ionicons 
                           name={p.id === 'Free' ? 'leaf-outline' : p.id === 'Basic' ? 'shield-outline' : 'ribbon-outline'} 
                           size={20} 
-                          color={plan === p.id ? '#FFF' : '#4A90E2'} 
+                          color={plan === p.id ? '#FFF' : '#FF8F00'} 
                         />
                         <View style={{ marginLeft: 12 }}>
                           <Text style={[styles.planOptionText, plan === p.id && styles.planOptionTextActive, { fontSize: 16 }]}>

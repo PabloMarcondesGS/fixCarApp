@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, FlatList, Image }
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
 const STORAGE_KEY = '@autocare:veiculos_v2';
@@ -38,7 +38,7 @@ interface Vehicle {
 }
 
 export default function AgendamentoScreen() {
-  const { userInfo } = useAuth();
+  const { userInfo, accessToken } = useAuth();
   const params = useLocalSearchParams();
   const workshopId = params.workshopId as string;
   const workshopName = params.workshopName as string || 'Oficina';
@@ -66,7 +66,7 @@ export default function AgendamentoScreen() {
     setLoadingAvailability(true);
     try {
       const date = days[selectedDate].fullDate;
-      const response = await fetch(`${API_ENDPOINTS.APPOINTMENTS}?workshopId=${workshopId}&date=${date}`);
+      const response = await apiFetch(`${API_ENDPOINTS.APPOINTMENTS}?workshopId=${workshopId}&date=${date}`, accessToken);
       const data = await response.json();
       const slots = data.map((appt: any) => appt.time);
       setOccupiedSlots(slots);
@@ -85,7 +85,7 @@ export default function AgendamentoScreen() {
   const loadVehicles = async () => {
     try {
       const url = userInfo?.id ? `${API_ENDPOINTS.VEHICLES}?userId=${userInfo.id}` : API_ENDPOINTS.VEHICLES;
-      const response = await fetch(url);
+      const response = await apiFetch(url, accessToken);
       const data = await response.json();
       setVehicles(data);
       if (data.length > 0) {
@@ -144,7 +144,7 @@ export default function AgendamentoScreen() {
 
   const sendAppointmentToBackend = async (appointment: Appointment) => {
     try {
-      const response = await fetch(API_ENDPOINTS.APPOINTMENTS, {
+      const response = await apiFetch(API_ENDPOINTS.APPOINTMENTS, accessToken, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

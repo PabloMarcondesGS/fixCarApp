@@ -41,15 +41,33 @@ export default function HomeScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = await resp.json();
-      login(token, {
-        id: user.id || user.sub, // Google id
-        name: user.name,
-        picture: user.picture,
-        email: user.email,
-        role: 'client'
+      
+      const backendResp = await fetch(`${API_ENDPOINTS.LOGIN}/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          googleId: user.id || user.sub,
+          name: user.name,
+          email: user.email
+        }),
       });
+      
+      const data = await backendResp.json();
+      
+      if (backendResp.ok) {
+        login(data.accessToken, {
+          id: data.id,
+          name: data.name,
+          picture: user.picture,
+          email: data.username,
+          role: data.role
+        });
+      } else {
+        Alert.alert('Erro', data.error || 'Falha ao autenticar com Google no servidor.');
+      }
     } catch (error) {
       console.log('Erro ao buscar dados do usuário:', error);
+      Alert.alert('Erro', 'Não foi possível completar o login com Google.');
     }
   };
 

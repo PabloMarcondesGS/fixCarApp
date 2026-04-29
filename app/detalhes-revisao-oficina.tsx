@@ -3,7 +3,8 @@ import { Text, View, TextInput, TouchableOpacity, ScrollView, ActivityIndicator,
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
+import { useAuth } from '@/context/AuthContext';
 import styles from '@/styles/detalhes-revisao-oficina.styles';
 
 interface AppointmentDetail {
@@ -26,6 +27,7 @@ interface AppointmentDetail {
 
 export default function DetalhesRevisaoOficinaScreen() {
   const params = useLocalSearchParams();
+  const { accessToken } = useAuth();
   const router = useRouter();
   const appointmentId = params.id as string;
 
@@ -42,7 +44,7 @@ export default function DetalhesRevisaoOficinaScreen() {
 
   const fetchAppointment = async () => {
     try {
-      const resp = await fetch(`${API_ENDPOINTS.APPOINTMENTS}/${appointmentId}`);
+      const resp = await apiFetch(`${API_ENDPOINTS.APPOINTMENTS}/${appointmentId}`, accessToken);
       const data = await resp.json();
       if (resp.ok) {
         setAppointment(data);
@@ -92,7 +94,7 @@ export default function DetalhesRevisaoOficinaScreen() {
 
     setSaving(true);
     try {
-      const resp = await fetch(`${API_ENDPOINTS.APPOINTMENTS}/${appointmentId}`, {
+      const resp = await apiFetch(`${API_ENDPOINTS.APPOINTMENTS}/${appointmentId}`, accessToken, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

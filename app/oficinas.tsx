@@ -3,7 +3,8 @@ import { Text, View, FlatList, TouchableOpacity, TextInput, Linking, Modal, Scro
 import styles from '@/styles/oficinas.styles';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Review {
   id: string;
@@ -29,6 +30,7 @@ interface Workshop {
 // O MOCK_WORKSHOPS foi movido para o backend
 
 export default function OficinasScreen() {
+  const { accessToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [fullWorkshops, setFullWorkshops] = useState<Workshop[]>([]);
@@ -42,7 +44,7 @@ export default function OficinasScreen() {
 
   const fetchWorkshops = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.WORKSHOPS);
+      const response = await apiFetch(API_ENDPOINTS.WORKSHOPS, accessToken);
       const data = await response.json();
       setWorkshops(data);
       setFullWorkshops(data);

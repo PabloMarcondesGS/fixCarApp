@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
+import { useAuth } from '@/context/AuthContext';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 
 // Configuração do Calendário para Português
@@ -22,6 +23,7 @@ const TIME_SLOTS = [
 
 export default function BloqueioScreen() {
   const router = useRouter();
+  const { accessToken } = useAuth();
   const [date, setDate] = useState(''); // Formato YYYY-MM-DD
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [reason, setReason] = useState('');
@@ -34,7 +36,7 @@ export default function BloqueioScreen() {
 
   const fetchBlockedSlots = async () => {
     try {
-      const resp = await fetch(API_ENDPOINTS.BLOCKED_SLOTS);
+      const resp = await apiFetch(API_ENDPOINTS.BLOCKED_SLOTS, accessToken);
       const data = await resp.json();
       setBlockedSlots(data);
     } catch (error) {
@@ -58,7 +60,7 @@ export default function BloqueioScreen() {
 
   const handleDeleteSlot = async (id: string) => {
     try {
-      const resp = await fetch(`${API_ENDPOINTS.BLOCKED_SLOTS}/${id}`, {
+      const resp = await apiFetch(`${API_ENDPOINTS.BLOCKED_SLOTS}/${id}`, accessToken, {
         method: 'DELETE',
       });
       if (resp.ok) {
@@ -81,7 +83,7 @@ export default function BloqueioScreen() {
     const dateBR = formatDateToBR(date);
     try {
       const promises = selectedTimes.map(time => 
-        fetch(API_ENDPOINTS.BLOCKED_SLOTS, {
+        apiFetch(API_ENDPOINTS.BLOCKED_SLOTS, accessToken, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ date: dateBR, time, reason }),

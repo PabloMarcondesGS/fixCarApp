@@ -4,7 +4,7 @@ import { Image, ScrollView, Text, TouchableOpacity, View, Linking } from 'react-
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { styles } from './Dashboard.styles';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 
 const STORAGE_KEY = '@autocare:veiculos_v2';
 const APPOINTMENTS_KEY = '@autocare:agendamentos';
@@ -57,7 +57,7 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
   const loadVehicleCount = async () => {
     try {
       const url = userInfo?.id ? `${API_ENDPOINTS.VEHICLES}?userId=${userInfo.id}` : API_ENDPOINTS.VEHICLES;
-      const response = await fetch(url);
+      const response = await apiFetch(url, token);
       const data = await response.json();
       setVehicleCount(data.length);
     } catch (e) {
@@ -74,7 +74,7 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
         url += `?userId=${userInfo.id}`;
       }
       
-      const response = await fetch(url);
+      const response = await apiFetch(url, token);
       const data: Appointment[] = await response.json();
       
       // Filtrar apenas agendamentos não concluídos para o "Próximo"

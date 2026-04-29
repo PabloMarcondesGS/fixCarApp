@@ -6,7 +6,7 @@ import { Stack, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Image, ActivityIndicator } from 'react-native';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
 // Storage Key
@@ -31,7 +31,7 @@ interface Vehicle {
 }
 
 export default function VeiculosScreen() {
-  const { userInfo } = useAuth();
+  const { userInfo, accessToken } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,7 @@ export default function VeiculosScreen() {
 
   const loadPlans = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.PLANS);
+      const response = await apiFetch(API_ENDPOINTS.PLANS, accessToken);
       const data = await response.json();
       setPlans(data);
     } catch (error) {
@@ -65,7 +65,7 @@ export default function VeiculosScreen() {
     try {
       setLoading(true);
       const url = userInfo?.id ? `${API_ENDPOINTS.VEHICLES}?userId=${userInfo.id}` : API_ENDPOINTS.VEHICLES;
-      const response = await fetch(url);
+      const response = await apiFetch(url, accessToken);
       const data = await response.json();
       setVehicles(data);
     } catch (e) {
@@ -113,7 +113,7 @@ export default function VeiculosScreen() {
     };
 
     try {
-      const response = await fetch(API_ENDPOINTS.VEHICLES, {
+      const response = await apiFetch(API_ENDPOINTS.VEHICLES, accessToken, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(vehicleData),
@@ -146,7 +146,7 @@ export default function VeiculosScreen() {
       if (confirmed) {
         const performDelete = async () => {
           try {
-            const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${item.id}`, {
+            const response = await apiFetch(`${API_ENDPOINTS.VEHICLES}/${item.id}`, accessToken, {
               method: 'DELETE',
             });
             if (response.ok) {
@@ -169,7 +169,7 @@ export default function VeiculosScreen() {
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Excluir', style: 'destructive', onPress: async () => {
             try {
-              const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${item.id}`, {
+              const response = await apiFetch(`${API_ENDPOINTS.VEHICLES}/${item.id}`, accessToken, {
                 method: 'DELETE',
               });
               if (response.ok) {

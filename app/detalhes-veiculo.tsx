@@ -3,7 +3,7 @@ import { Text, View, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicat
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import styles from '@/styles/detalhes-veiculo.styles';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
 interface Maintenance {
@@ -25,7 +25,7 @@ export default function DetalhesVeiculoScreen() {
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
   const [loading, setLoading] = useState(true);
-  const { userInfo } = useAuth();
+  const { userInfo, accessToken } = useAuth();
 
   // Rating State
   const [rating, setRating] = useState(0);
@@ -42,7 +42,7 @@ export default function DetalhesVeiculoScreen() {
   const fetchMaintenanceHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_ENDPOINTS.APPOINTMENTS}?vehicleId=${id}`);
+      const response = await apiFetch(`${API_ENDPOINTS.APPOINTMENTS}?vehicleId=${id}`, accessToken);
       const data = await response.json();
       
       // Filtras apenas as concluídas (ou todas, se preferir histórico completo)
@@ -72,7 +72,7 @@ export default function DetalhesVeiculoScreen() {
 
     setSubmittingReview(true);
     try {
-      const response = await fetch(API_ENDPOINTS.REVIEWS, {
+      const response = await apiFetch(API_ENDPOINTS.REVIEWS, accessToken, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

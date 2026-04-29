@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert,
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
 const SPECIALTIES = [
@@ -13,7 +13,7 @@ const SPECIALTIES = [
 
 export default function PerfilOficinaScreen() {
   const router = useRouter();
-  const { userInfo } = useAuth();
+  const { userInfo, accessToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -36,7 +36,7 @@ export default function PerfilOficinaScreen() {
 
   const loadWorkshopData = async () => {
     try {
-      const resp = await fetch(`${API_ENDPOINTS.WORKSHOPS}/${userInfo?.workshop_id}`);
+      const resp = await apiFetch(`${API_ENDPOINTS.WORKSHOPS}/${userInfo?.workshop_id}`, accessToken);
       const data = await resp.json();
       if (resp.ok) {
         setName(data.name || '');
@@ -96,7 +96,7 @@ export default function PerfilOficinaScreen() {
 
     setSaving(true);
     try {
-      const resp = await fetch(`${API_ENDPOINTS.WORKSHOPS}/${userInfo?.workshop_id}`, {
+      const resp = await apiFetch(`${API_ENDPOINTS.WORKSHOPS}/${userInfo?.workshop_id}`, accessToken, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

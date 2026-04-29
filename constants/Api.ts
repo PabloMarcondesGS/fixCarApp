@@ -2,7 +2,7 @@
 // Substitua pelo seu IP local para teste em dispositivos físicos (Desenvolvimento)
 // Substitua pela URL do seu servidor para produção (Beta/Play Store)
 
-const DEV_API_URL = 'http://192.168.15.9:3000/api';
+const DEV_API_URL = 'http://192.168.15.11:3000/api';
 const PROD_API_URL = 'https://api.seudominio.com/api'; // <--- ALTERE PARA O SEU SERVIDOR REAL
 
 export const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
@@ -15,4 +15,17 @@ export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/login`,
   BLOCKED_SLOTS: `${API_BASE_URL}/blocked-slots`,
   REVIEWS: `${API_BASE_URL}/reviews`
+};
+
+export const apiFetch = async (url: string, token?: string | null, options: RequestInit = {}) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return fetch(url, { ...options, headers });
 };

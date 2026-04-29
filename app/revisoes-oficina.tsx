@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, 
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { API_ENDPOINTS } from '@/constants/Api';
+import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
 interface Appointment {
@@ -23,7 +23,7 @@ interface Appointment {
 }
 
 export default function RevisoesOficinaScreen() {
-  const { userInfo } = useAuth();
+  const { userInfo, accessToken } = useAuth();
   const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +39,7 @@ export default function RevisoesOficinaScreen() {
     
     setLoading(true);
     try {
-      const resp = await fetch(`${API_ENDPOINTS.APPOINTMENTS}?workshopId=${userInfo.workshop_id}`);
+      const resp = await apiFetch(`${API_ENDPOINTS.APPOINTMENTS}?workshopId=${userInfo.workshop_id}`, accessToken);
       const data = await resp.json();
       
       // Ordena por data (mais recentes primeiro)

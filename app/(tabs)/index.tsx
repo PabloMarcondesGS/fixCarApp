@@ -21,7 +21,13 @@ export default function HomeScreen() {
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: "203284143716-opfmi37sbfb76etc99afrli04l90u3vr.apps.googleusercontent.com",
+    iosClientId: "YOUR_IOS_CLIENT_ID_HERE.apps.googleusercontent.com",
+    androidClientId: "203284143716-69o5i0ke5qjakbop5gtlil1m0640rvv4.apps.googleusercontent.com",
     scopes: ['profile', 'email'],
+    redirectUri: AuthSession.makeRedirectUri({
+      scheme: 'com.pablomarcondes.autocare',
+      path: 'oauth2redirect/google',
+    }),
   });
 
   useEffect(() => {

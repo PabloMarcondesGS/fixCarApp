@@ -5,9 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { View, ActivityIndicator } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -31,6 +34,7 @@ function RootLayoutContent() {
     return (
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="oauthredirect" />
       </Stack>
     );
   }

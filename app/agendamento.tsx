@@ -155,14 +155,14 @@ export default function AgendamentoScreen() {
       const result = await response.json();
       
       if (response.ok) {
-        alert(`${result.message}\nOficina: ${appointment.workshopName}\nData: ${appointment.date} às ${appointment.time}`);
+        alert(`${result.message || 'Agendamento realizado com sucesso!'}\nServiço: ${appointment.service}\nOficina: ${appointment.workshopName}\nData: ${appointment.date} às ${appointment.time}`);
         router.back();
       } else {
-        alert('Erro ao realizar agendamento no servidor.');
+        alert(result.error || 'Erro ao realizar agendamento no servidor.');
       }
     } catch (error) {
       console.error('Erro ao enviar agendamento:', error);
-      alert('Agendamento salvo apenas localmente (erro de conexão com o servidor).');
+      alert(`Agendamento salvo apenas localmente (erro de conexão com o servidor).\nServiço: ${appointment.service}\nOficina: ${appointment.workshopName}\nData: ${appointment.date} às ${appointment.time}`);
       router.back();
     }
   };

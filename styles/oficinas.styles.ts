@@ -27,6 +27,34 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1E293B',
   },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    gap: 6,
+  },
+  filterChipActive: {
+    backgroundColor: '#FFF0ED',
+    borderWidth: 1,
+    borderColor: '#FF8F00',
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterChipTextActive: {
+    color: '#FF8F00',
+    fontWeight: '700',
+  },
   listContent: {
     padding: 20,
     paddingBottom: 40,

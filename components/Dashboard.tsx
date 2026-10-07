@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image, ScrollView, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'expo-router';
 import { styles } from './Dashboard.styles';
 import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 
@@ -39,6 +40,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ token, userInfo, onLogout }: DashboardProps) {
+  const router = useRouter();
   const [vehicleCount, setVehicleCount] = useState(0);
   const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
   const [appointmentCount, setAppointmentCount] = useState(0);
@@ -188,13 +190,22 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
             )}
 
             <View style={styles.card}>
-              <Ionicons name="car-sport" size={40} color="#4A90E2" style={{ marginBottom: 10 }} />
+              <Ionicons name="car-sport" size={40} color="#FF8F00" style={{ marginBottom: 10 }} />
               <Text style={styles.cardTitle}>{nextAppointment ? 'Gerencie seus veículos' : 'Sua garagem está em dia!'}</Text>
               <Text style={styles.cardDescription}>
                 {nextAppointment 
                   ? 'Acompanhe o status dos seus veículos, registros de manutenção e histórico completo em um só lugar.' 
-                  : 'Você não tem revisões pendentes no momento. Que tal agendar uma verificação preventiva?'}
+                  : 'Cadastre seus veículos para acompanhar o histórico de revisões e agendamentos.'}
               </Text>
+              
+              <TouchableOpacity 
+                style={styles.addVehicleButton}
+                onPress={() => router.push('/veiculos?add=true')}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="add-circle-outline" size={22} color="#FFF" />
+                <Text style={styles.addVehicleButtonText}>Adicionar Veículo</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.statsContainer}>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import Toast from 'react-native-toast-message';
 import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -10,6 +11,16 @@ const SPECIALTIES = [
   'Motor', 'Suspensão', 'Freios', 'Pneus', 'Alinhamento',
   'Balanceamento', 'Elétrica', 'Ar condicionado', 'Pintura', 'Funilaria'
 ];
+
+const showToast = (type: 'success' | 'error' | 'info', text1: string, text2?: string) => {
+  Toast.show({
+    type,
+    text1,
+    text2,
+    position: 'top',
+    visibilityTime: 3000,
+  });
+};
 
 export default function PerfilOficinaScreen() {
   const router = useRouter();
@@ -81,7 +92,7 @@ export default function PerfilOficinaScreen() {
       setSelectedSpecialties(selectedSpecialties.filter(s => s !== item));
     } else {
       if (selectedSpecialties.length >= 3) {
-        Alert.alert('Limite Atingido', 'Você pode selecionar no máximo 3 especialidades.');
+        showToast('error', 'Limite Atingido', 'Você pode selecionar no máximo 3 especialidades.');
         return;
       }
       setSelectedSpecialties([...selectedSpecialties, item]);
@@ -90,7 +101,7 @@ export default function PerfilOficinaScreen() {
 
   const handleSave = async () => {
     if (!name || !address || !cnpj || selectedSpecialties.length === 0) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios e selecione ao menos uma especialidade.');
+      showToast('error', 'Campos Obrigatórios', 'Preencha nome, endereço, CNPJ e escolha ao menos 1 especialidade.');
       return;
     }
 
@@ -109,13 +120,17 @@ export default function PerfilOficinaScreen() {
       });
 
       if (resp.ok) {
-        Alert.alert('Sucesso', 'Perfil da oficina atualizado com êxito! Voltando para a Home.');
-        router.replace('/(tabs)');
+        showToast('success', 'Sucesso!', 'Perfil da oficina atualizado com êxito.');
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1500);
       } else {
-        Alert.alert('Erro', 'Não foi possível salvar os dados. Tente novamente.');
+        const data = await resp.json().catch(() => ({}));
+        showToast('error', 'Erro ao Salvar', data.error || 'Não foi possível salvar os dados da oficina. Tente novamente.');
       }
-    } catch (error) {
-      Alert.alert('Erro', 'Conexão falhou.');
+    } catch (error: any) {
+      console.log('Erro ao salvar perfil da oficina:', error);
+      showToast('error', 'Erro de Conexão', 'Não foi possível conectar ao servidor.');
     } finally {
       setSaving(false);
     }

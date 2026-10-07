@@ -156,9 +156,17 @@ function RootLayoutContent() {
             drawerItemStyle: { display: 'none' },
           }}
         />
+        <Drawer.Screen
+          name="oauthredirect"
+          options={{
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
     </Drawer>
   );
 }
+
+import Toast from 'react-native-toast-message';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -168,6 +176,7 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <RootLayoutContent />
         <StatusBar style="auto" />
+        <Toast />
       </ThemeProvider>
     </AuthProvider>
   );

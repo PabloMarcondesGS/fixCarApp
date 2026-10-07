@@ -2,15 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, FlatList, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import styles from '@/styles/veiculos.styles';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Image, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
 // Storage Key
 const STORAGE_KEY = '@autocare:veiculos_v2';
+
+const VALID_COLORS = [
+  'preto', 'preta', 'branco', 'branca', 'prata', 'cinza', 'vermelho', 'vermelha',
+  'azul', 'verde', 'amarelo', 'amarela', 'marrom', 'bege', 'vinho', 'laranja',
+  'dourado', 'dourada', 'grafite', 'roxo', 'roxa', 'rosa', 'bronze', 'chumbo',
+  'pérola', 'perola', 'champagne', 'fantasia', 'black', 'white', 'silver',
+  'grey', 'gray', 'red', 'blue', 'green', 'yellow', 'brown'
+];
+
+const COMMON_COLORS = ['Preto', 'Branco', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Verde', 'Vinho', 'Grafite', 'Laranja'];
 
 interface Plan {
   id: string;
@@ -37,6 +48,7 @@ export default function VeiculosScreen() {
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const router = useRouter();
+  const params = useLocalSearchParams<{ add?: string }>();
   
   // Form State
   const [model, setModel] = useState('');
@@ -50,6 +62,12 @@ export default function VeiculosScreen() {
     loadVehicles();
     loadPlans();
   }, []);
+
+  useEffect(() => {
+    if (params.add === 'true') {
+      setIsModalVisible(true);
+    }
+  }, [params.add]);
 
   const loadPlans = async () => {
     try {
@@ -98,7 +116,23 @@ export default function VeiculosScreen() {
 
   const handleAddVehicle = async () => {
     if (!model || !plate || !color) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      Toast.show({
+        type: 'error',
+        text1: 'Campos Incompletos',
+        text2: 'Por favor, preencha modelo, placa e cor.',
+        position: 'top',
+      });
+      return;
+    }
+
+    const normalizedColor = color.trim().toLowerCase();
+    if (!VALID_COLORS.includes(normalizedColor)) {
+      Toast.show({
+        type: 'error',
+        text1: 'Cor Inválida',
+        text2: 'Escolha ou digite uma cor automotiva válida (ex: Preto, Branco, Prata).',
+        position: 'top',
+      });
       return;
     }
 
@@ -123,6 +157,13 @@ export default function VeiculosScreen() {
         const newVehicle = await response.json();
         setVehicles([...vehicles, newVehicle]);
         
+        Toast.show({
+          type: 'success',
+          text1: 'Veículo Cadastrado!',
+          text2: `${model} (${plate}) foi adicionado com sucesso.`,
+          position: 'top',
+        });
+
         // reset form
         setModel('');
         setPlate('');
@@ -132,11 +173,21 @@ export default function VeiculosScreen() {
         setPlan('Free');
         setIsModalVisible(false);
       } else {
-        Alert.alert('Erro', 'Não foi possível cadastrar o veículo no servidor.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao Cadastrar',
+          text2: 'Não foi possível cadastrar o veículo no servidor.',
+          position: 'top',
+        });
       }
     } catch (error) {
       console.error('Erro ao cadastrar veículo:', error);
-      Alert.alert('Erro', 'Falha na conexão com o servidor.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro de Conexão',
+        text2: 'Falha na conexão com o servidor.',
+        position: 'top',
+      });
     }
   };
 
@@ -318,8 +369,9 @@ export default function VeiculosScreen() {
                   style={styles.input}
                   placeholder="Digite a placa"
                   value={plate}
-                  onChangeText={setPlate}
+                  onChangeText={(text) => setPlate(text.slice(0, 7))}
                   autoCapitalize="characters"
+                  maxLength={7}
                 />
               </View>
 
@@ -327,10 +379,39 @@ export default function VeiculosScreen() {
                 <Text style={styles.label}>Cor</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Digite a cor"
+                  placeholder="Digite ou selecione a cor"
                   value={color}
                   onChangeText={setColor}
                 />
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {COMMON_COLORS.map((c) => {
+                      const isSelected = color.trim().toLowerCase() === c.toLowerCase();
+                      return (
+                        <TouchableOpacity
+                          key={c}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 16,
+                            backgroundColor: isSelected ? '#FF8F00' : '#F1F5F9',
+                            borderWidth: 1,
+                            borderColor: isSelected ? '#FF8F00' : '#E2E8F0',
+                          }}
+                          onPress={() => setColor(c)}
+                        >
+                          <Text style={{
+                            fontSize: 12,
+                            fontWeight: '600',
+                            color: isSelected ? '#FFF' : '#64748B',
+                          }}>
+                            {c}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
               </View>
 
               <View style={styles.formGroup}>

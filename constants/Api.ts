@@ -1,8 +1,6 @@
 import { Platform } from 'react-native';
 
-const DEV_API_URL = Platform.OS === 'web'
-  ? 'http://localhost:3000/api'
-  : 'http://18.118.131.155:3000/api';
+const DEV_API_URL = 'http://18.118.131.155:3000/api';
 const PROD_API_URL = 'http://18.118.131.155:3000/api';
 
 export const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;

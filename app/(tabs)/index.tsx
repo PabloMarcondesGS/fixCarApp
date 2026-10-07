@@ -19,16 +19,29 @@ export default function HomeScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const redirectUri = AuthSession.makeRedirectUri(
+    Platform.OS === 'web'
+      ? {}
+      : { scheme: 'com.pablomarcondes.autocare' }
+  );
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: "203284143716-opfmi37sbfb76etc99afrli04l90u3vr.apps.googleusercontent.com",
     iosClientId: "YOUR_IOS_CLIENT_ID_HERE.apps.googleusercontent.com",
     androidClientId: "203284143716-69o5i0ke5qjakbop5gtlil1m0640rvv4.apps.googleusercontent.com",
+    redirectUri,
     scopes: ['profile', 'email'],
   });
 
   useEffect(() => {
-    if (response?.type === 'success' && response.authentication) {
-      fetchUserInfo(response.authentication.accessToken);
+    if (response?.type === 'success') {
+      const token = response.authentication?.accessToken || (response.params as any)?.access_token;
+      if (token) {
+        fetchUserInfo(token);
+      }
+    } else if (response?.type === 'error') {
+      console.log('Google Auth Error:', response.error);
+      Alert.alert('Erro de Autenticação', response.error?.message || 'Falha no login com Google.');
     }
   }, [response]);
 
@@ -37,17 +50,27 @@ export default function HomeScreen() {
       const resp = await fetch('https://www.googleapis.com/userinfo/v2/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      if (!resp.ok) {
+        throw new Error(`API do Google retornou status ${resp.status}`);
+      }
+
       const user = await resp.json();
       
-      const backendResp = await fetch(`${API_ENDPOINTS.LOGIN}/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          googleId: user.id || user.sub,
-          name: user.name,
-          email: user.email
-        }),
-      });
+      let backendResp;
+      try {
+        backendResp = await fetch(`${API_ENDPOINTS.LOGIN}/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            googleId: user.id || user.sub,
+            name: user.name,
+            email: user.email
+          }),
+        });
+      } catch (netErr: any) {
+        throw new Error(`Servidor inacessível (${netErr?.message || 'Erro de conexão'})`);
+      }
       
       const data = await backendResp.json();
       
@@ -60,11 +83,11 @@ export default function HomeScreen() {
           role: data.role
         });
       } else {
-        Alert.alert('Erro', data.error || 'Falha ao autenticar com Google no servidor.');
+        Alert.alert('Erro no Servidor', data.error || 'Falha ao autenticar com Google no servidor.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log('Erro ao buscar dados do usuário:', error);
-      Alert.alert('Erro', 'Não foi possível completar o login com Google.');
+      Alert.alert('Erro de Login', error?.message || 'Não foi possível completar o login com Google.');
     }
   };
 

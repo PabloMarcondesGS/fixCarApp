@@ -25,6 +25,28 @@ interface AppointmentDetail {
   color: string;
 }
 
+import Toast from 'react-native-toast-message';
+
+const formatCurrency = (value: string | number): string => {
+  if (value === undefined || value === null || value === '') return 'R$ 0,00';
+  
+  if (typeof value === 'number') {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  const cleanNumber = value.replace(/\D/g, '');
+  if (!cleanNumber) return 'R$ 0,00';
+
+  const numericValue = parseFloat(cleanNumber) / 100;
+  return numericValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const parseCurrencyToNumber = (formattedValue: string): number => {
+  const cleanNumber = formattedValue.replace(/\D/g, '');
+  if (!cleanNumber) return 0;
+  return parseFloat(cleanNumber) / 100;
+};
+
 export default function DetalhesRevisaoOficinaScreen() {
   const params = useLocalSearchParams();
   const { accessToken } = useAuth();
@@ -38,6 +60,11 @@ export default function DetalhesRevisaoOficinaScreen() {
   const [partsImages, setPartsImages] = React.useState<string[]>([]);
   const [saving, setSaving] = React.useState(false);
 
+  const handleCostChange = (text: string) => {
+    const digits = text.replace(/\D/g, '');
+    setCost(formatCurrency(digits));
+  };
+
   React.useEffect(() => {
     fetchAppointment();
   }, [appointmentId]);
@@ -49,7 +76,7 @@ export default function DetalhesRevisaoOficinaScreen() {
       if (resp.ok) {
         setAppointment(data);
         setDetails(data.details || '');
-        setCost(data.cost ? String(data.cost) : '');
+        setCost(data.cost ? formatCurrency(data.cost) : 'R$ 0,00');
         if (data.parts_images) {
           try {
             setPartsImages(JSON.parse(data.parts_images));
@@ -88,7 +115,12 @@ export default function DetalhesRevisaoOficinaScreen() {
 
   const handleSave = async () => {
     if (!details.trim()) {
-      Alert.alert('Atenção', 'Por favor, descreva o que foi feito na revisão.');
+      Toast.show({
+        type: 'error',
+        text1: 'Atenção',
+        text2: 'Por favor, descreva o que foi feito na revisão.',
+        position: 'top',
+      });
       return;
     }
 
@@ -100,20 +132,39 @@ export default function DetalhesRevisaoOficinaScreen() {
         body: JSON.stringify({
           status: 'Concluído',
           details: details,
-          cost: parseFloat(cost) || 0,
+          cost: parseCurrencyToNumber(cost),
           parts_images: partsImages
         }),
       });
 
       if (resp.ok) {
-        Alert.alert('Sucesso', 'Detalhes da revisão salvos com sucesso!');
-        router.back();
+        Toast.show({
+          type: 'success',
+          text1: 'Revisão Concluída!',
+          text2: 'Os detalhes da revisão foram salvos com sucesso.',
+          position: 'top',
+          visibilityTime: 3000,
+        });
+
+        setTimeout(() => {
+          router.back();
+        }, 1200);
       } else {
-        Alert.alert('Erro', 'Não foi possível salvar os detalhes.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao Salvar',
+          text2: 'Não foi possível salvar os detalhes da revisão.',
+          position: 'top',
+        });
       }
     } catch (error) {
       console.error('Erro ao salvar:', error);
-      Alert.alert('Erro', 'Falha na conexão com o servidor.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro de Conexão',
+        text2: 'Falha na conexão com o servidor.',
+        position: 'top',
+      });
     } finally {
       setSaving(false);
     }
@@ -215,7 +266,7 @@ export default function DetalhesRevisaoOficinaScreen() {
             keyboardType="numeric"
             placeholder="0,00"
             value={cost}
-            onChangeText={setCost}
+            onChangeText={handleCostChange}
           />
         </View>
       </ScrollView>

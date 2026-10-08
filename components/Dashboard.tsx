@@ -161,7 +161,11 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
         ) : (
           <>
             {nextAppointment && (
-              <View style={styles.nextAppointmentCard}>
+              <TouchableOpacity 
+                style={styles.nextAppointmentCard}
+                activeOpacity={0.9}
+                onPress={() => router.push('/minhas-revisoes')}
+              >
                 <View style={styles.nextAppointmentBadge}>
                   <Text style={styles.nextAppointmentBadgeText}>Próxima Revisão</Text>
                 </View>
@@ -186,7 +190,7 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
                     <Text style={styles.addressButtonText}>Ver Endereço</Text>
                   </TouchableOpacity>
                 )}
-              </View>
+              </TouchableOpacity>
             )}
 
             <View style={styles.card}>
@@ -209,16 +213,24 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
             </View>
 
             <View style={styles.statsContainer}>
-              <View style={styles.statBox}>
+              <TouchableOpacity 
+                style={styles.statBox}
+                activeOpacity={0.7}
+                onPress={() => router.push('/minhas-revisoes')}
+              >
                 <Ionicons name="construct-outline" size={24} color="#4A90E2" style={{ marginBottom: 4 }} />
                 <Text style={styles.statNumber}>{appointmentCount}</Text>
                 <Text style={styles.statLabel}>Revisões</Text>
-              </View>
-              <View style={styles.statBox}>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.statBox}
+                activeOpacity={0.7}
+                onPress={() => router.push('/veiculos')}
+              >
                 <Ionicons name="car-outline" size={24} color="#4A90E2" style={{ marginBottom: 4 }} />
                 <Text style={styles.statNumber}>{vehicleCount}</Text>
                 <Text style={styles.statLabel}>Veículos</Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.infoCard}>

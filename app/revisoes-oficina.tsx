@@ -60,7 +60,11 @@ export default function RevisoesOficinaScreen() {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'pendente': return '#F59E0B';
+      case 'em análise':
+      case 'em analise': return '#8B5CF6';
       case 'confirmado': return '#10B981';
+      case 'concluído':
+      case 'concluido': return '#3B82F6';
       case 'cancelado': return '#EF4444';
       default: return '#64748B';
     }

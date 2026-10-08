@@ -140,6 +140,17 @@ function RootLayoutContent() {
           ),
         }}
       />
+      <Drawer.Screen
+        name="minhas-revisoes"
+        options={{
+          drawerLabel: 'Minhas Revisões',
+          title: 'Revisões Agendadas',
+          drawerItemStyle: isWorkshop ? { display: 'none' } : {},
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
         <Drawer.Screen
           name="detalhes-veiculo"
           options={{

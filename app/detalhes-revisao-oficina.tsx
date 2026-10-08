@@ -7,6 +7,11 @@ import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 import styles from '@/styles/detalhes-revisao-oficina.styles';
 
+interface MediaItem {
+  type: 'image' | 'video';
+  uri: string;
+}
+
 interface AppointmentDetail {
   id: string;
   workshop_id: string;
@@ -17,7 +22,10 @@ interface AppointmentDetail {
   status: string;
   details: string;
   cost: number;
+  preliminary_cost?: number;
   parts_images: string;
+  observations?: string;
+  observation_media?: string;
   model: string;
   plate: string;
   brand: string;
@@ -57,12 +65,20 @@ export default function DetalhesRevisaoOficinaScreen() {
   const [loading, setLoading] = React.useState(true);
   const [details, setDetails] = React.useState('');
   const [cost, setCost] = React.useState('');
+  const [preliminaryCost, setPreliminaryCost] = React.useState('');
   const [partsImages, setPartsImages] = React.useState<string[]>([]);
+  const [observations, setObservations] = React.useState('');
+  const [observationMedia, setObservationMedia] = React.useState<MediaItem[]>([]);
   const [saving, setSaving] = React.useState(false);
 
   const handleCostChange = (text: string) => {
     const digits = text.replace(/\D/g, '');
     setCost(formatCurrency(digits));
+  };
+
+  const handlePreliminaryCostChange = (text: string) => {
+    const digits = text.replace(/\D/g, '');
+    setPreliminaryCost(formatCurrency(digits));
   };
 
   React.useEffect(() => {
@@ -77,11 +93,20 @@ export default function DetalhesRevisaoOficinaScreen() {
         setAppointment(data);
         setDetails(data.details || '');
         setCost(data.cost ? formatCurrency(data.cost) : 'R$ 0,00');
+        setPreliminaryCost(data.preliminary_cost ? formatCurrency(data.preliminary_cost) : 'R$ 0,00');
+        setObservations(data.observations || '');
         if (data.parts_images) {
           try {
             setPartsImages(JSON.parse(data.parts_images));
           } catch (e) {
             setPartsImages([]);
+          }
+        }
+        if (data.observation_media) {
+          try {
+            setObservationMedia(JSON.parse(data.observation_media));
+          } catch (e) {
+            setObservationMedia([]);
           }
         }
       }
@@ -109,11 +134,39 @@ export default function DetalhesRevisaoOficinaScreen() {
     }
   };
 
+  const pickObservationMedia = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsMultipleSelection: true,
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets) {
+      const newMedia: MediaItem[] = result.assets.map(asset => {
+        const isVideo = asset.type === 'video' || (asset.mimeType && asset.mimeType.startsWith('video'));
+        const uri = asset.base64 
+          ? `data:${asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg')};base64,${asset.base64}`
+          : asset.uri;
+        return {
+          type: isVideo ? 'video' : 'image',
+          uri,
+        };
+      });
+
+      setObservationMedia(prev => [...prev, ...newMedia]);
+    }
+  };
+
   const removeImage = (index: number) => {
     setPartsImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = async () => {
+  const removeObservationMedia = (index: number) => {
+    setObservationMedia(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSave = async (targetStatus: 'Em Análise' | 'Concluído') => {
     if (!details.trim()) {
       Toast.show({
         type: 'error',
@@ -130,18 +183,24 @@ export default function DetalhesRevisaoOficinaScreen() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: 'Concluído',
+          status: targetStatus,
           details: details,
           cost: parseCurrencyToNumber(cost),
-          parts_images: partsImages
+          preliminary_cost: parseCurrencyToNumber(preliminaryCost),
+          parts_images: partsImages,
+          observations: observations,
+          observation_media: observationMedia,
         }),
       });
 
       if (resp.ok) {
+        setAppointment(prev => prev ? { ...prev, status: targetStatus } : null);
         Toast.show({
           type: 'success',
-          text1: 'Revisão Concluída!',
-          text2: 'Os detalhes da revisão foram salvos com sucesso.',
+          text1: targetStatus === 'Concluído' ? 'Revisão Concluída!' : 'Status Atualizado!',
+          text2: targetStatus === 'Concluído' 
+            ? 'Os detalhes da revisão foram concluídos com sucesso.' 
+            : 'Revisão salva em análise com sucesso.',
           position: 'top',
           visibilityTime: 3000,
         });
@@ -217,21 +276,23 @@ export default function DetalhesRevisaoOficinaScreen() {
               <Text style={styles.infoValue}>{appointment.time}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>SERVIÇO</Text>
-              <Text style={styles.infoValue}>{appointment.service}</Text>
+              <Text style={styles.infoLabel}>STATUS ATUAL</Text>
+              <Text style={[styles.infoValue, { color: appointment.status === 'Concluído' ? '#10B981' : appointment.status === 'Em Análise' ? '#8B5CF6' : '#FF8F00' }]}>
+                {appointment.status || 'Pendente'}
+              </Text>
             </View>
           </View>
         </View>
 
         <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>O que foi feito?</Text>
-          <Text style={styles.sectionSubtitle}>Descreva detalhadamente as peças trocadas e serviços realizados.</Text>
+          <Text style={styles.sectionLabel}>O que foi feito / Diagnóstico</Text>
+          <Text style={styles.sectionSubtitle}>Descreva detalhadamente o diagnóstico, peças trocadas e serviços realizados.</Text>
           
           <TextInput
             style={styles.detailsInput}
             multiline
             numberOfLines={6}
-            placeholder="Ex: Troca de óleo, pastilhas de freio, alinhamento..."
+            placeholder="Ex: Em análise: checando ruído na suspensão... ou Revisão concluída: troca de óleo e filtros realizada."
             value={details}
             onChangeText={setDetails}
             textAlignVertical="top"
@@ -259,7 +320,7 @@ export default function DetalhesRevisaoOficinaScreen() {
           </ScrollView>
         </View>
 
-        <View style={[styles.formSection, { marginTop: 24, marginBottom: 40 }]}>
+        <View style={[styles.formSection, { marginTop: 24 }]}>
           <Text style={styles.sectionLabel}>Valor Total (R$)</Text>
           <TextInput
             style={styles.costInput}
@@ -269,20 +330,86 @@ export default function DetalhesRevisaoOficinaScreen() {
             onChangeText={handleCostChange}
           />
         </View>
+
+        <View style={[styles.formSection, { marginTop: 24, marginBottom: 40 }]}>
+          <Text style={styles.sectionLabel}>Observações Adicionais</Text>
+          <Text style={styles.sectionSubtitle}>Anotações extras, avarias pré-existentes, fotos ou vídeos de diagnóstico.</Text>
+          
+          <TextInput
+            style={[styles.detailsInput, { minHeight: 80 }]}
+            multiline
+            numberOfLines={3}
+            placeholder="Ex: Pneu dianteiro com desgaste acentuado no ombro; recomendada troca futura."
+            value={observations}
+            onChangeText={setObservations}
+            textAlignVertical="top"
+          />
+
+          <Text style={[styles.sectionLabel, { fontSize: 15, marginTop: 8 }]}>Fotos e Vídeos de Observação</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.imagesContainer, { marginTop: 8 }]}>
+            <TouchableOpacity style={styles.addMediaButton} onPress={pickObservationMedia}>
+              <Ionicons name="videocam-outline" size={26} color="#8B5CF6" />
+              <Text style={styles.addMediaButtonText}>+ Foto/Vídeo</Text>
+            </TouchableOpacity>
+
+            {observationMedia.map((item, index) => (
+              <View key={index} style={styles.mediaWrapper}>
+                {item.type === 'video' ? (
+                  <View style={styles.videoPlaceholder}>
+                    <Ionicons name="play-circle" size={36} color="#FFF" />
+                    <Text style={styles.videoTag}>VÍDEO</Text>
+                  </View>
+                ) : (
+                  <RNImage source={{ uri: item.uri }} style={styles.partsImage} />
+                )}
+                <TouchableOpacity style={styles.removeImageButton} onPress={() => removeObservationMedia(index)}>
+                  <Ionicons name="close-circle" size={24} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={[styles.formSection, { marginTop: 8, marginBottom: 40 }]}>
+          <Text style={styles.sectionLabel}>Valor Preliminar (R$)</Text>
+          <Text style={styles.sectionSubtitle}>Estimativa inicial ou orçamento prévio enquanto a revisão está em análise.</Text>
+          <TextInput
+            style={[styles.costInput, { color: '#8B5CF6' }]}
+            keyboardType="numeric"
+            placeholder="0,00"
+            value={preliminaryCost}
+            onChangeText={handlePreliminaryCostChange}
+          />
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <TouchableOpacity 
+          style={[styles.analysisButton, saving && { opacity: 0.7 }]} 
+          onPress={() => handleSave('Em Análise')}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#8B5CF6" />
+          ) : (
+            <>
+              <Ionicons name="search-outline" size={20} color="#8B5CF6" />
+              <Text style={styles.analysisButtonText}>Em Análise</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity 
           style={[styles.saveButton, saving && { opacity: 0.7 }]} 
-          onPress={handleSave}
+          onPress={() => handleSave('Concluído')}
           disabled={saving}
         >
           {saving ? (
             <ActivityIndicator color="#FFF" />
           ) : (
             <>
-              <Ionicons name="checkmark-circle-outline" size={24} color="#FFF" />
-              <Text style={styles.saveButtonText}>Concluir Revisão</Text>
+              <Ionicons name="checkmark-circle-outline" size={20} color="#FFF" />
+              <Text style={styles.saveButtonText}>Concluir</Text>
             </>
           )}
         </TouchableOpacity>

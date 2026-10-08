@@ -12,7 +12,10 @@ interface Maintenance {
   service: string;
   status: string;
   cost?: number;
+  preliminary_cost?: number;
   details?: string;
+  observations?: string;
+  observation_media?: string; // JSON string
   workshop_id: string;
   workshop_name?: string;
   parts_images?: string; // JSON string
@@ -242,7 +245,11 @@ export default function DetalhesVeiculoScreen() {
 
                 <Text style={styles.modalTitle}>{selectedMaintenance.service}</Text>
                 <Text style={styles.modalValue}>
-                  {selectedMaintenance.cost ? `R$ ${parseFloat(String(selectedMaintenance.cost)).toFixed(2)}` : 'Concluído'}
+                  {selectedMaintenance.cost 
+                    ? `R$ ${parseFloat(String(selectedMaintenance.cost)).toFixed(2)}` 
+                    : selectedMaintenance.preliminary_cost 
+                    ? `R$ ${parseFloat(String(selectedMaintenance.preliminary_cost)).toFixed(2)} (Preliminar)` 
+                    : 'Concluído'}
                 </Text>
 
                 <View style={styles.modalGrid}>
@@ -262,6 +269,45 @@ export default function DetalhesVeiculoScreen() {
                     <View style={styles.notesContainer}>
                       <Text style={styles.notesText}>{selectedMaintenance.details}</Text>
                     </View>
+                  </View>
+                )}
+
+                {selectedMaintenance.observations && (
+                  <View style={styles.notesSection}>
+                    <Text style={styles.modalLabel}>Observações da Oficina</Text>
+                    <View style={[styles.notesContainer, { backgroundColor: '#F5F3FF', borderColor: '#E9D5FF' }]}>
+                      <Text style={[styles.notesText, { color: '#6B21A8' }]}>{selectedMaintenance.observations}</Text>
+                    </View>
+                  </View>
+                )}
+
+                {selectedMaintenance.observation_media && (
+                  <View style={{ marginBottom: 20 }}>
+                    <Text style={styles.modalLabel}>Fotos e Vídeos de Observação</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                      {(() => {
+                        try {
+                          const mediaList = JSON.parse(selectedMaintenance.observation_media);
+                          return mediaList.map((m: any, idx: number) => (
+                            <View key={idx} style={{ marginRight: 12, borderRadius: 12, overflow: 'hidden' }}>
+                              {m.type === 'video' ? (
+                                <View style={{ width: 100, height: 100, backgroundColor: '#1E293B', alignItems: 'center', justifyContent: 'center' }}>
+                                  <Ionicons name="play-circle" size={32} color="#FFF" />
+                                  <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '700', marginTop: 4 }}>VÍDEO</Text>
+                                </View>
+                              ) : (
+                                <Image 
+                                  source={{ uri: m.uri }} 
+                                  style={{ width: 100, height: 100, borderRadius: 12 }} 
+                                />
+                              )}
+                            </View>
+                          ));
+                        } catch {
+                          return null;
+                        }
+                      })()}
+                    </ScrollView>
                   </View>
                 )}
 

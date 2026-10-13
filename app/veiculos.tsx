@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Image, ActivityIndicator } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { Calendar } from 'react-native-calendars';
 import { API_ENDPOINTS, apiFetch } from '@/constants/Api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -39,6 +40,9 @@ interface Vehicle {
   imageUri?: string;
   plan?: string;
   subscription_status?: string;
+  current_km?: number | string;
+  last_oil_change?: string;
+  history_notes?: string;
 }
 
 export default function VeiculosScreen() {
@@ -57,6 +61,17 @@ export default function VeiculosScreen() {
   const [type, setType] = useState<'Carro' | 'Moto'>('Carro');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [plan, setPlan] = useState<'Free' | 'Basic' | 'Premium'>('Free');
+  const [currentKm, setCurrentKm] = useState('');
+  const [lastOilChange, setLastOilChange] = useState('');
+  const [historyNotes, setHistoryNotes] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const formatDateToBR = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    if (!year || !month || !day) return dateString;
+    return `${day}/${month}/${year}`;
+  };
 
   useEffect(() => {
     loadVehicles();
@@ -144,6 +159,9 @@ export default function VeiculosScreen() {
       imageUri: imageUri || undefined,
       plan,
       user_id: userInfo?.id,
+      current_km: currentKm ? Number(currentKm) : undefined,
+      last_oil_change: lastOilChange || undefined,
+      history_notes: historyNotes || undefined,
     };
 
     try {
@@ -171,6 +189,9 @@ export default function VeiculosScreen() {
         setType('Carro');
         setImageUri(null);
         setPlan('Free');
+        setCurrentKm('');
+        setLastOilChange('');
+        setHistoryNotes('');
         setIsModalVisible(false);
       } else {
         Toast.show({
@@ -415,6 +436,55 @@ export default function VeiculosScreen() {
               </View>
 
               <View style={styles.formGroup}>
+                <Text style={styles.label}>Km Atual</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: 45000"
+                  value={currentKm}
+                  onChangeText={setCurrentKm}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Última Troca de Óleo</Text>
+                <TouchableOpacity
+                  style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                  onPress={() => setShowDatePicker(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: lastOilChange ? '#1E293B' : '#94A3B8', fontSize: 16 }}>
+                    {lastOilChange ? formatDateToBR(lastOilChange) : 'Selecionar data da troca'}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {lastOilChange ? (
+                      <TouchableOpacity 
+                        onPress={(e) => { 
+                          e.stopPropagation(); 
+                          setLastOilChange(''); 
+                        }}
+                      >
+                        <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                      </TouchableOpacity>
+                    ) : null}
+                    <Ionicons name="calendar-outline" size={20} color="#FF8F00" />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Histórico / Revisões Anteriores</Text>
+                <TextInput
+                  style={[styles.input, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]}
+                  placeholder="Ex: Troca de correia dentada aos 30.000 km, pastilhas trocadas em concessionária..."
+                  value={historyNotes}
+                  onChangeText={setHistoryNotes}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
                 <Text style={styles.label}>Plano</Text>
                 <View style={[styles.planContainer, { flexDirection: 'column' }]}>
                   {plans.map((p) => (
@@ -450,6 +520,77 @@ export default function VeiculosScreen() {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* MODAL DE SELEÇÃO DE DATA DA TROCA DE ÓLEO */}
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20
+        }}>
+          <View style={{
+            backgroundColor: '#FFF',
+            borderRadius: 16,
+            padding: 16,
+            width: '100%',
+            maxWidth: 380,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 10,
+            elevation: 5
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1E293B' }}>
+                Data da Última Troca
+              </Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                <Ionicons name="close" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <Calendar
+              current={lastOilChange || new Date().toISOString().split('T')[0]}
+              maxDate={new Date().toISOString().split('T')[0]} // Não permite datas futuras para última troca
+              onDayPress={(day: { dateString: string }) => {
+                setLastOilChange(day.dateString);
+                setShowDatePicker(false);
+              }}
+              markedDates={lastOilChange ? {
+                [lastOilChange]: { selected: true, selectedColor: '#FF8F00' }
+              } : {}}
+              theme={{
+                todayTextColor: '#FF8F00',
+                selectedDayBackgroundColor: '#FF8F00',
+                arrowColor: '#FF8F00',
+                textDayFontWeight: '500',
+                textMonthFontWeight: '700',
+                textDayHeaderFontWeight: '600'
+              }}
+            />
+
+            <TouchableOpacity 
+              style={{
+                marginTop: 14,
+                paddingVertical: 12,
+                borderRadius: 10,
+                backgroundColor: '#F1F5F9',
+                alignItems: 'center'
+              }}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={{ color: '#475569', fontWeight: '600' }}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   );

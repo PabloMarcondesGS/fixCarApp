@@ -26,6 +26,7 @@ interface AppointmentDetail {
   parts_images: string;
   observations?: string;
   observation_media?: string;
+  analysis_rejection_reason?: string;
   model: string;
   plate: string;
   brand: string;
@@ -277,11 +278,40 @@ export default function DetalhesRevisaoOficinaScreen() {
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>STATUS ATUAL</Text>
-              <Text style={[styles.infoValue, { color: appointment.status === 'Concluído' ? '#10B981' : appointment.status === 'Em Análise' ? '#8B5CF6' : '#FF8F00' }]}>
+              <Text style={[styles.infoValue, { 
+                color: appointment.status === 'Concluído' 
+                  ? '#10B981' 
+                  : appointment.status === 'Em Análise' 
+                  ? '#8B5CF6' 
+                  : appointment.status === 'Em Andamento'
+                  ? '#F97316'
+                  : '#FF8F00' 
+              }]}>
                 {appointment.status || 'Pendente'}
               </Text>
             </View>
           </View>
+
+          {appointment.analysis_rejection_reason ? (
+            <View style={{
+              marginTop: 14,
+              padding: 12,
+              borderRadius: 12,
+              backgroundColor: '#FEF2F2',
+              borderWidth: 1,
+              borderColor: '#FCA5A5'
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 }}>
+                <Ionicons name="alert-circle" size={18} color="#EF4444" />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#B91C1C' }}>
+                  Informativo: Análise Recusada pelo Cliente
+                </Text>
+              </View>
+              <Text style={{ fontSize: 13, color: '#991B1B' }}>
+                {appointment.analysis_rejection_reason}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.formSection}>

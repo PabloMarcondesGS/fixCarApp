@@ -14,8 +14,10 @@ export const styles = StyleSheet.create({
     marginBottom: 30,
   },
   userInfo: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 12,
   },
   avatarPlaceholder: {
     width: 60,
@@ -51,9 +53,13 @@ export const styles = StyleSheet.create({
     marginTop: 4,
   },
   logoutButton: {
-    padding: 10,
+    padding: 12,
     backgroundColor: '#FFEBEE',
-    borderRadius: 12,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    elevation: 3,
   },
   dashboardContent: {
     flex: 1,

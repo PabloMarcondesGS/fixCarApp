@@ -62,6 +62,7 @@ export default function RevisoesOficinaScreen() {
       case 'pendente': return '#F59E0B';
       case 'em análise':
       case 'em analise': return '#8B5CF6';
+      case 'em andamento': return '#F97316';
       case 'confirmado': return '#10B981';
       case 'concluído':
       case 'concluido': return '#3B82F6';

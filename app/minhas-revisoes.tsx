@@ -9,7 +9,9 @@ import {
   Modal, 
   ScrollView, 
   Image, 
-  Linking 
+  Linking,
+  TextInput,
+  Alert
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +38,7 @@ interface AppointmentClient {
   parts_images?: string;
   observations?: string;
   observation_media?: string;
+  analysis_rejection_reason?: string;
 }
 
 export default function MinhasRevisoesScreen() {
@@ -45,6 +48,9 @@ export default function MinhasRevisoesScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentClient | null>(null);
   const [filter, setFilter] = useState<'todos' | 'agendados' | 'concluidos'>('todos');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [rejectModalVisible, setRejectModalVisible] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -80,6 +86,8 @@ export default function MinhasRevisoesScreen() {
       case 'em análise':
       case 'em analise':
         return { label: 'Em Análise', color: '#8B5CF6', bg: '#EDE9FE', icon: 'search-outline' as const };
+      case 'em andamento':
+        return { label: 'Em Andamento', color: '#F97316', bg: '#FFEDD5', icon: 'construct-outline' as const };
       case 'confirmado':
         return { label: 'Confirmado', color: '#10B981', bg: '#D1FAE5', icon: 'checkmark-circle-outline' as const };
       case 'concluído':
@@ -89,6 +97,74 @@ export default function MinhasRevisoesScreen() {
         return { label: 'Cancelado', color: '#EF4444', bg: '#FEE2E2', icon: 'close-circle-outline' as const };
       default:
         return { label: status || 'Agendado', color: '#64748B', bg: '#F1F5F9', icon: 'calendar-outline' as const };
+    }
+  };
+
+  const handleAcceptAnalysis = async (appointmentId: string) => {
+    setActionLoading(true);
+    try {
+      const resp = await apiFetch(`${API_ENDPOINTS.APPOINTMENTS}/${appointmentId}`, accessToken, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'Em Andamento',
+        }),
+      });
+
+      if (resp.ok) {
+        Alert.alert('Sucesso', 'Análise aceita! O serviço agora está Em Andamento.');
+        setAppointments(prev => prev.map(a => a.id === appointmentId ? { ...a, status: 'Em Andamento' } : a));
+        setSelectedAppointment(prev => prev && prev.id === appointmentId ? { ...prev, status: 'Em Andamento' } : prev);
+      } else {
+        Alert.alert('Erro', 'Não foi possível aceitar a análise.');
+      }
+    } catch (e) {
+      console.error('Erro ao aceitar análise:', e);
+      Alert.alert('Erro', 'Falha na conexão com o servidor.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmRejectAnalysis = async () => {
+    if (!selectedAppointment) return;
+    setActionLoading(true);
+    try {
+      const rejectionInfo = rejectionReason.trim() 
+        ? `Análise recusada pelo cliente. Motivo: ${rejectionReason.trim()}`
+        : 'Análise recusada pelo cliente.';
+
+      const resp = await apiFetch(`${API_ENDPOINTS.APPOINTMENTS}/${selectedAppointment.id}`, accessToken, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'Concluído',
+          analysis_rejection_reason: rejectionInfo,
+        }),
+      });
+
+      if (resp.ok) {
+        Alert.alert('Análise Recusada', 'O serviço foi concluído com o informativo de que a análise foi recusada.');
+        setAppointments(prev => prev.map(a => a.id === selectedAppointment.id ? { 
+          ...a, 
+          status: 'Concluído', 
+          analysis_rejection_reason: rejectionInfo 
+        } : a));
+        setSelectedAppointment(prev => prev && prev.id === selectedAppointment.id ? { 
+          ...prev, 
+          status: 'Concluído', 
+          analysis_rejection_reason: rejectionInfo 
+        } : prev);
+        setRejectModalVisible(false);
+        setRejectionReason('');
+      } else {
+        Alert.alert('Erro', 'Não foi possível recusar a análise.');
+      }
+    } catch (e) {
+      console.error('Erro ao recusar análise:', e);
+      Alert.alert('Erro', 'Falha na conexão com o servidor.');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -414,6 +490,80 @@ export default function MinhasRevisoesScreen() {
                   })()
                 ) : null}
 
+                {/* Informativo de Análise Recusada */}
+                {selectedAppointment.analysis_rejection_reason ? (
+                  <View style={[styles.sectionBox, { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                      <Ionicons name="alert-circle" size={18} color="#EF4444" style={{ marginRight: 6 }} />
+                      <Text style={[styles.sectionHeaderTitle, { color: '#B91C1C', marginBottom: 0 }]}>
+                        Informativo: Análise Recusada
+                      </Text>
+                    </View>
+                    <Text style={[styles.sectionBodyText, { color: '#991B1B' }]}>
+                      {selectedAppointment.analysis_rejection_reason}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Banner de Decisão do Cliente se estiver 'Em Análise' */}
+                {(selectedAppointment.status?.toLowerCase() === 'em análise' || selectedAppointment.status?.toLowerCase() === 'em analise') ? (
+                  <View style={[styles.sectionBox, { backgroundColor: '#FDF4FF', borderColor: '#F0ABFC', borderWidth: 1.5 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                      <Ionicons name="help-circle" size={20} color="#A21CAF" style={{ marginRight: 6 }} />
+                      <Text style={[styles.sectionHeaderTitle, { color: '#86198F', fontSize: 16, marginBottom: 0 }]}>
+                        Aprovação da Análise
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 13, color: '#701A75', marginBottom: 14, lineHeight: 18 }}>
+                      A oficina concluiu a análise prévia do veículo. Você aceita o diagnóstico e orçamento estimado para dar andamento ao serviço?
+                    </Text>
+
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#EF4444',
+                          paddingVertical: 12,
+                          borderRadius: 12,
+                          alignItems: 'center',
+                          flexDirection: 'row',
+                          justifyContent: 'center',
+                          gap: 6
+                        }}
+                        disabled={actionLoading}
+                        onPress={() => setRejectModalVisible(true)}
+                      >
+                        <Ionicons name="close-circle-outline" size={18} color="#FFF" />
+                        <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>Recusar</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#10B981',
+                          paddingVertical: 12,
+                          borderRadius: 12,
+                          alignItems: 'center',
+                          flexDirection: 'row',
+                          justifyContent: 'center',
+                          gap: 6
+                        }}
+                        disabled={actionLoading}
+                        onPress={() => handleAcceptAnalysis(selectedAppointment.id)}
+                      >
+                        {actionLoading ? (
+                          <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                          <>
+                            <Ionicons name="checkmark-circle-outline" size={18} color="#FFF" />
+                            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>Aceitar</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : null}
+
                 <TouchableOpacity 
                   style={styles.modalCloseButton} 
                   onPress={() => setSelectedAppointment(null)}
@@ -423,6 +573,105 @@ export default function MinhasRevisoesScreen() {
               </ScrollView>
             )}
           </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Modal de Confirmação de Recusa da Análise */}
+      <Modal
+        visible={rejectModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setRejectModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setRejectModalVisible(false)}
+        >
+          <TouchableOpacity 
+            style={[styles.modalContent, { maxHeight: '60%' }]} 
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.modalHeader, { borderBottomColor: '#FEE2E2' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="close-circle" size={24} color="#EF4444" />
+                <Text style={[styles.modalTitle, { color: '#B91C1C' }]}>Recusar Análise</Text>
+              </View>
+              <TouchableOpacity onPress={() => setRejectModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ padding: 16 }}>
+              <Text style={{ fontSize: 14, color: '#475569', marginBottom: 12, lineHeight: 20 }}>
+                Tem certeza que deseja recusar a análise? O serviço será finalizado como <Text style={{ fontWeight: '700', color: '#1E293B' }}>Concluído</Text> registrando a recusa.
+              </Text>
+
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6 }}>
+                Motivo da recusa (opcional):
+              </Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#CBD5E1',
+                  borderRadius: 12,
+                  padding: 12,
+                  fontSize: 14,
+                  color: '#1E293B',
+                  backgroundColor: '#F8FAFC',
+                  height: 90,
+                  textAlignVertical: 'top',
+                  marginBottom: 16
+                }}
+                placeholder="Ex: Valor acima do orçamento planejado, decidi não realizar no momento..."
+                value={rejectionReason}
+                onChangeText={setRejectionReason}
+                multiline
+                numberOfLines={3}
+              />
+
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#F1F5F9',
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    alignItems: 'center'
+                  }}
+                  onPress={() => setRejectModalVisible(false)}
+                  disabled={actionLoading}
+                >
+                  <Text style={{ color: '#475569', fontWeight: '700' }}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#EF4444',
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    gap: 6
+                  }}
+                  onPress={handleConfirmRejectAnalysis}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="trash-outline" size={16} color="#FFF" />
+                      <Text style={{ color: '#FFF', fontWeight: '700' }}>Confirmar Recusa</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </View>

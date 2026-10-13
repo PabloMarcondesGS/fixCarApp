@@ -36,7 +36,7 @@ export default function DetalhesVeiculoScreen() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   // Parse params
-  const { id, model, plate, color, type, imageUri } = params;
+  const { id, model, plate, color, type, imageUri, current_km, last_oil_change, history_notes } = params;
 
   useEffect(() => {
     fetchMaintenanceHistory();
@@ -174,6 +174,42 @@ export default function DetalhesVeiculoScreen() {
             <Text style={styles.label}>Tipo de Veículo</Text>
             <Text style={styles.value}>{type}</Text>
           </View>
+
+          {current_km ? (
+            <>
+              <View style={styles.separator} />
+              <View style={styles.detailItem}>
+                <Text style={styles.label}>Km Atual</Text>
+                <Text style={styles.value}>{Number(current_km).toLocaleString('pt-BR')} km</Text>
+              </View>
+            </>
+          ) : null}
+
+          {last_oil_change ? (
+            <>
+              <View style={styles.separator} />
+              <View style={styles.detailItem}>
+                <Text style={styles.label}>Última Troca de Óleo</Text>
+                <Text style={styles.value}>
+                  {String(last_oil_change).includes('-') 
+                    ? String(last_oil_change).split('-').reverse().join('/') 
+                    : last_oil_change}
+                </Text>
+              </View>
+            </>
+          ) : null}
+
+          {history_notes ? (
+            <>
+              <View style={styles.separator} />
+              <View style={[styles.detailItem, { flexDirection: 'column', alignItems: 'flex-start' }]}>
+                <Text style={styles.label}>Histórico Anterior</Text>
+                <Text style={[styles.value, { marginTop: 4, textAlign: 'left', fontWeight: 'normal', color: '#475569' }]}>
+                  {history_notes}
+                </Text>
+              </View>
+            </>
+          ) : null}
         </View>
 
         {/* SECTION: ÚLTIMAS MANUTENÇÕES */}

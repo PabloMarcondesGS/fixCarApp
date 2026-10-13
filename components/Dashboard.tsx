@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image, ScrollView, Text, TouchableOpacity, View, Linking } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View, Linking, Alert, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
@@ -44,6 +44,7 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
   const [vehicleCount, setVehicleCount] = useState(0);
   const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
   const [appointmentCount, setAppointmentCount] = useState(0);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -100,6 +101,15 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
     Linking.openURL(url);
   };
 
+  const handleLogoutPress = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    onLogout();
+  };
+
   const isWorkshop = userInfo?.role === 'workshop';
 
   return (
@@ -118,7 +128,12 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
             <Text style={styles.tokenText}>{isWorkshop ? 'Painel de Controle da Oficina' : 'Explorando o universo automotivo'}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={handleLogoutPress}
+          activeOpacity={0.7}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
           <Ionicons name="log-out-outline" size={24} color="#F44336" />
         </TouchableOpacity>
       </View>
@@ -241,6 +256,102 @@ export default function Dashboard({ token, userInfo, onLogout }: DashboardProps)
           </>
         )}
       </ScrollView>
+
+      {/* MODAL DE CONFIRMAÇÃO DE LOGOUT */}
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <TouchableOpacity 
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}
+          activeOpacity={1}
+          onPress={() => setShowLogoutModal(false)}
+        >
+          <View 
+            style={{
+              backgroundColor: '#FFF',
+              borderRadius: 24,
+              padding: 24,
+              width: '100%',
+              maxWidth: 340,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.15,
+              shadowRadius: 20,
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}
+          >
+            <View 
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: '#FEE2E2',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons name="log-out-outline" size={32} color="#EF4444" />
+            </View>
+
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 8, textAlign: 'center' }}>
+              Sair da Conta
+            </Text>
+
+            <Text style={{ fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
+              Tem certeza de que deseja desconectar da sua conta no AutoCare?
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 14,
+                  backgroundColor: '#F1F5F9',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                activeOpacity={0.7}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#64748B' }}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 14,
+                  backgroundColor: '#EF4444',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#EF4444',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+                activeOpacity={0.7}
+                onPress={handleConfirmLogout}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFF' }}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }

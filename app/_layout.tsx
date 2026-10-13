@@ -4,7 +4,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, TouchableOpacity, Text, Alert } from 'react-native';
+import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import * as WebBrowser from 'expo-web-browser';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -18,7 +19,7 @@ export const unstable_settings = {
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, userInfo, loading } = useAuth();
+  const { isAuthenticated, userInfo, logout, loading } = useAuth();
   
   if (loading) {
     return (
@@ -40,38 +41,40 @@ function RootLayoutContent() {
   }
 
   return (
-    <Drawer screenOptions={{ 
-      headerShown: true,
-      headerStyle: {
-        backgroundColor: '#FFC680',
-        elevation: 0, // Remove sombra no Android
-        shadowOpacity: 0, // Remove sombra no iOS
-        borderBottomWidth: 1,
-        borderBottomColor: '#FFC680',
-      },
-      headerTintColor: '#1E293B',
-      headerTitleStyle: {
-        fontWeight: '800',
-      },
-      drawerStyle: { 
-        width: 250,
-        backgroundColor: 'rgba(255, 255, 255, 0.94)',
-      },
-      drawerActiveTintColor: '#FF8F00', // Um laranja mais forte para o menu
-      drawerInactiveTintColor: '#64748B',
-      drawerActiveBackgroundColor: '#FFF8E1',
-      drawerLabelStyle: {
-        fontSize: 16,
-        fontWeight: '600',
-      },
-      drawerType: 'front',
-      overlayColor: 'rgba(0, 0, 0, 0.5)',
-    }}>
+    <Drawer 
+      screenOptions={{ 
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: '#FFC680',
+          elevation: 0, // Remove sombra no Android
+          shadowOpacity: 0, // Remove sombra no iOS
+          borderBottomWidth: 1,
+          borderBottomColor: '#FFC680',
+        },
+        headerTintColor: '#1E293B',
+        headerTitleStyle: {
+          fontWeight: '800',
+        },
+        drawerStyle: { 
+          width: 250,
+          backgroundColor: 'rgba(255, 255, 255, 0.94)',
+        },
+        drawerActiveTintColor: '#FF8F00', // Um laranja mais forte para o menu
+        drawerInactiveTintColor: '#64748B',
+        drawerActiveBackgroundColor: '#FFF8E1',
+        drawerLabelStyle: {
+          fontSize: 16,
+          fontWeight: '600',
+        },
+        drawerType: 'front',
+        overlayColor: 'rgba(0, 0, 0, 0.5)',
+      }}
+    >
       <Drawer.Screen
         name="(tabs)"
         options={{
           drawerLabel: 'Home',
-          title: 'My Car',
+          title: 'Dr. Carro',
           drawerIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -169,6 +172,12 @@ function RootLayoutContent() {
         />
         <Drawer.Screen
           name="oauthredirect"
+          options={{
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
+          name="+not-found"
           options={{
             drawerItemStyle: { display: 'none' },
           }}
